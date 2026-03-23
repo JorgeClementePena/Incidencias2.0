@@ -1,0 +1,644 @@
+  <!DOCTYPE html>
+  <html lang="es">
+  <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Incidencias Manager — Gestión de Incidencias</title>
+  <link rel="stylesheet" href="/styles/main.css">
+    <link rel="icon" type="image/png" href="/img/fidamc_transparente.png">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  </head>
+  <body>
+
+  <!-- ═══════════════════════════════════
+       PANTALLA DE AUTH
+  ═══════════════════════════════════ -->
+  <div id="auth-screen">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <div class="auth-logo-icon">⚙️</div>
+        <div>
+          <div class="auth-logo-name">Incidencias Manager</div>
+          <div class="auth-logo-sub">Gestión de Incidencias</div>
+        </div>
+      </div>
+
+      <div class="tab-switch">
+        <button class="active" id="tab-login-btn" onclick="App.auth.switchTab('login')">Iniciar sesión</button>
+        <button id="tab-reg-btn" onclick="App.auth.switchTab('register')">Registrarse</button>
+      </div>
+
+      <!-- Login -->
+      <div id="login-panel">
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="email" id="login-email" placeholder="tu@empresa.com" autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter') App.auth.login()">
+        </div>
+        <p class="field-error" id="login-error"></p>
+        <button class="btn btn-primary btn-full btn-lg" style="margin-top:8px" onclick="App.auth.login()">
+          Entrar
+        </button>
+      </div>
+
+      <!-- Registro -->
+      <div id="register-panel" style="display:none">
+        <div class="form-group">
+          <label>Nombre completo <span class="req">*</span></label>
+          <input type="text" id="reg-name" placeholder="Tu nombre y apellidos">
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico <span class="req">*</span></label>
+          <input type="email" id="reg-email" placeholder="tu@empresa.com">
+        </div>
+        <div class="form-group">
+          <label>Departamento</label>
+          <select id="reg-dept">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Contraseña <span class="req">*</span></label>
+          <input type="password" id="reg-pass" placeholder="Mínimo 6 caracteres">
+        </div>
+        <p class="field-error" id="reg-error"></p>
+        <button class="btn btn-primary btn-full btn-lg" style="margin-top:8px" onclick="App.auth.register()">
+          Crear cuenta
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       APP PRINCIPAL
+  ═══════════════════════════════════ -->
+  <div id="app">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="topbar-brand">
+        <span>⚙️</span> Incidencias<span>Fidamc</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-user">
+          <div class="avatar" id="tb-avatar">?</div>
+          <div class="user-info">
+            <div class="name" id="tb-name">—</div>
+            <div class="role" id="tb-role">—</div>
+          </div>
+          <button class="btn-topbar" onclick="App.auth.logout()">Salir</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+      <div class="nav-section">General</div>
+      <button class="nav-item active" data-page="nueva-nc" onclick="App.navigate('nueva-nc')">
+        <span class="icon">➕</span> Nueva Incidencia
+      </button>
+
+      <!-- Solo admin -->
+      <div class="nav-section">Consultas</div>
+      <button class="nav-item" data-page="dashboard" onclick="App.navigate('dashboard')">
+        <span class="icon">📊</span> Dashboard
+      </button>
+      <button class="nav-item" data-page="incidencias" onclick="App.navigate('incidencias')">
+        <span class="icon">📋</span> Incidencias
+      </button>
+      <div class="nav-section admin-only">Administración</div>
+      <button class="nav-item admin-only" data-page="usuarios" onclick="App.navigate('usuarios')">
+        <span class="icon">👥</span> Usuarios
+      </button>
+      <button class="nav-item admin-only" data-page="pendientes" onclick="App.navigate('pendientes')">
+        <span class="icon">⏳</span> Pendientes
+        <span id="badge-pendientes" style="margin-left:auto;background:#e53e3e;color:white;border-radius:10px;padding:1px 7px;font-size:11px;display:none"></span>
+      </button>
+      <button class="nav-item admin-only" data-page="categorias" onclick="App.navigate('categorias')">
+        <span class="icon">🏷️</span> Categorías
+      </button>
+
+      <div style="position:absolute; bottom:0; left:0; right:0; padding:16px; border-top:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
+        <img src="/img/LogoFidamc.png" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+        <div>
+          <div style="color:rgba(255,255,255,0.9); font-size:12px; font-weight:600;">Fidamc</div>
+          <div style="color:rgba(255,255,255,0.5); font-size:11px;">v2.1</div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main class="main-content">
+
+      <!-- ── PÁGINA: Nueva NC ── -->
+      <div class="page" id="page-nueva-nc">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Nueva Incidencias</div>
+            <div class="page-sub">Rellena el formulario. Se notificará automáticamente a los responsables.</div>
+          </div>
+        </div>
+
+        <!-- Formulario -->
+        <div id="nc-form-wrapper">
+          <div class="nc-form-card">
+            <div class="nc-form-header">
+              <span style="font-size:20px">📋</span>
+              <h2>Registro de Incidencias</h2>
+              <div style="margin-left:auto;background:rgba(255,255,255,0.15);border-radius:8px;padding:6px 14px;font-size:14px;font-weight:700;font-family:monospace" id="nc-preview-num">NC-XXXX</div>
+            </div>
+
+            <!-- Bloque 1: Identificación -->
+            <div class="nc-section">
+              <div class="nc-section-title">Identificación</div>
+              <div class="nc-row" style="grid-template-columns: 2fr 1fr 1fr 2fr">
+                <div class="nc-cell">
+                  <label>Código Proyecto <span class="req">*</span></label>
+                  <input type="text" id="nc-proyecto" placeholder="Ej: PROJ-2024-001">
+                </div>
+                <div class="nc-cell">
+                  <label>Proceso / PE <span class="req">*</span></label>
+                  <input type="text" id="nc-proceso" placeholder="PE-03">
+                </div>
+                <div class="nc-cell">
+                  <label>Fecha detección <span class="req">*</span></label>
+                  <input type="date" id="nc-fecha">
+                </div>
+                <div class="nc-cell">
+                  <label>Quién la detecta <span class="req">*</span></label>
+                  <input type="text" id="nc-detecta" placeholder="Nombre y cargo">
+                </div>
+              </div>
+              <div class="nc-row" style="grid-template-columns: 1fr 1fr 1fr 1fr">
+                <div class="nc-cell">
+                  <label>Departamento <span class="req">*</span></label>
+                  <select id="nc-departamento">
+                    <option value="">— Seleccionar —</option>
+                  </select>
+                </div>
+                <div class="nc-cell">
+                  <label>Área</label>
+                  <select id="nc-area">
+                    <option value="">— Seleccionar —</option>
+                  </select>
+                </div>
+                <div class="nc-cell">
+                  <label>Programa</label>
+                  <select id="nc-programa">
+                    <option value="">— Seleccionar —</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bloque 2: Descripción -->
+            <div class="nc-section">
+              <div class="nc-section-title">Descripción</div>
+              <div class="nc-row" style="grid-template-columns: 120px 200px 1fr">
+                <div class="nc-cell">
+                  <label>¿Afecta al MA?</label>
+                  <select id="nc-afecta-ma">
+                    <option value="false">No</option>
+                    <option value="true">Sí</option>
+                  </select>
+                </div>
+                <div class="nc-cell">
+                  <label>Afecta resultado</label>
+                  <input type="text" id="nc-afecta-resultado" placeholder="¿Qué resultado?">
+                </div>
+                <div class="nc-cell">
+                  <label>Descripción de la NC <span class="req">*</span></label>
+                  <textarea id="nc-descripcion" placeholder="Describe la incidencia con el máximo detalle..."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bloque 3: Análisis -->
+            <div class="nc-section">
+              <div class="nc-section-title">Análisis y Acciones</div>
+              <div class="nc-row" style="grid-template-columns: 1fr 1fr">
+                <div class="nc-cell">
+                  <label>Causas</label>
+                  <textarea id="nc-causas" placeholder="Causas identificadas de la incidencia..."></textarea>
+                </div>
+                <div class="nc-cell">
+                  <label>Acción Inmediata</label>
+                  <textarea id="nc-accion-inmediata" placeholder="Acciones a tomar de forma inmediata..."></textarea>
+                </div>
+              </div>
+              <div class="nc-row" style="grid-template-columns: 1fr 150px">
+                <div class="nc-cell">
+                  <label>Valoración €</label>
+                  <input type="number" id="nc-valoracion" placeholder="0.00" min="0" step="0.01">
+                </div>
+              </div>
+            </div>
+
+
+            <div class="nc-form-footer">
+              <button class="btn btn-ghost" onclick="App.form.reset()">🗑 Limpiar</button>
+              <button class="btn btn-primary" id="submit-btn" onclick="App.form.submit()">
+                📧 Enviar Incidencia
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Success -->
+        <div class="success-banner" id="nc-success">
+          <div class="big-icon">✅</div>
+          <h2>¡Incidencia registrada!</h2>
+          <p id="success-msg">La incidencia ha sido registrada y se ha enviado notificación a los responsables.</p>
+          <button class="btn btn-primary btn-lg" onclick="App.form.newNC()">➕ Registrar otra Incidencia</button>
+        </div>
+      </div>
+
+      <!-- ── PÁGINA: Dashboard ── -->
+      <div class="page" id="page-dashboard" style="display:none">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Dashboard</div>
+            <div class="page-sub">Análisis y seguimiento de Incidencias</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="App.dashboard.load()">🔄 Actualizar</button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-bar">
+          <div class="filter-group">
+            <label>Área</label>
+            <select id="f-area" onchange="App.dashboard.load()">
+              <option value="">Todas las áreas</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Departamento</label>
+            <select id="f-dept" onchange="App.dashboard.load()">
+              <option value="">Todos los depts.</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Programa</label>
+            <select id="f-programa" onchange="App.dashboard.load()">
+              <option value="">Todos los programas</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Año</label>
+            <select id="f-anio" onchange="App.dashboard.load()">
+              <option value="">Todos los años</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Mes</label>
+            <select id="f-mes" onchange="App.dashboard.load()">
+              <option value="">Todos los meses</option>
+              <option value="1">Enero</option><option value="2">Febrero</option>
+              <option value="3">Marzo</option><option value="4">Abril</option>
+              <option value="5">Mayo</option><option value="6">Junio</option>
+              <option value="7">Julio</option><option value="8">Agosto</option>
+              <option value="9">Septiembre</option><option value="10">Octubre</option>
+              <option value="11">Noviembre</option><option value="12">Diciembre</option>
+            </select>
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="App.dashboard.resetFilters()">✕ Limpiar</button>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpi-grid" id="kpi-grid">
+          <div class="kpi-card"><div class="kpi-icon green">📋</div><div><div class="kpi-value" id="kpi-total">—</div><div class="kpi-label">Nº Incidencias</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon red">🔴</div><div><div class="kpi-value" id="kpi-abiertas">—</div><div class="kpi-label">Abiertas</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon green">✅</div><div><div class="kpi-value" id="kpi-cerradas">—</div><div class="kpi-label">Cerradas</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon blue">💶</div><div><div class="kpi-value" id="kpi-euros">—</div><div class="kpi-label">Valoración €</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon orange">⚠️</div><div><div class="kpi-value" id="kpi-resultado">—</div><div class="kpi-label">Afecta resultado</div></div></div>
+          <div class="kpi-card"><div class="kpi-icon green">🌿</div><div><div class="kpi-value" id="kpi-ma">—</div><div class="kpi-label">Afectan al MA</div></div></div>
+        </div>
+
+        <!-- Gráficas fila 1 -->
+        <div class="charts-grid" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">📊 Por áreas y categorías</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chart-donut"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">📅 Valoración € por mes</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chart-valoracion-mes"></canvas></div></div>
+          </div>
+        </div>
+
+        <!-- Gráficas fila 2 -->
+        <div class="charts-grid" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">🏭 Incidencias por departamento</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chart-por-area"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">✈️ Incidencias por programa</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chart-por-programa"></canvas></div></div>
+          </div>
+        </div>
+
+        <!-- Gráficas fila 3 -->
+        <div class="charts-grid" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">📁 Incidencias por proyecto</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chart-por-proyecto"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">🏷️ Nº por categorías</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chart-cat-num"></canvas></div></div>
+          </div>
+        </div>
+
+        <!-- Gráficas fila 4 -->
+        <div class="charts-grid" style="grid-template-columns: 1fr 1fr; margin-bottom:18px">
+          <div class="card">
+            <div class="card-header"><div class="card-title">💶 Valoración € por categorías</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chart-cat-eur"></canvas></div></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">📆 Incidencias por día de la semana</div></div>
+            <div class="card-body"><div class="chart-wrap"><canvas id="chart-diasemana"></canvas></div></div>
+          </div>
+        </div>
+
+        <!-- Tabla días de la semana -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header"><div class="card-title">📅 Tabla: Incidencias por día de la semana</div></div>
+          <div class="table-wrap" id="table-diasemana"></div>
+        </div>
+      </div>
+
+      <!-- ── PÁGINA: Incidencias ── -->
+      <div class="page" id="page-incidencias" style="display:none">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Incidencias</div>
+            <div class="page-sub">Gestiona el estado de todas las incidencias</div>
+          </div>
+        </div>
+        <div class="search-bar">
+          <input type="text" id="s-search" placeholder="🔍  Buscar código, proyecto, descripción…" oninput="App.incidencias.load()">
+          <select id="s-estado" onchange="App.incidencias.load()">
+            <option value="">Todos los estados</option>
+            <option>Abierta</option><option>Cerrada</option>
+          </select>
+          <select id="s-area" onchange="App.incidencias.load()">
+            <option value="">Todas las áreas</option>
+          </select>
+          <select id="s-cat" onchange="App.incidencias.load()">
+            <option value="">Todas las categorías</option>
+          </select>
+        </div>
+        <div class="card">
+          <div class="table-wrap" id="incidencias-table"></div>
+          <div class="pagination" id="incidencias-pag"></div>
+        </div>
+      </div>
+
+      <!-- ── PÁGINA: Usuarios ── -->
+      <div class="page" id="page-usuarios" style="display:none">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Gestión de Usuarios</div>
+            <div class="page-sub">Administra roles y accesos</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap" id="usuarios-table"></div>
+        </div>
+      </div>
+
+      <!-- ── PÁGINA: Pendientes ── -->
+      <div class="page" id="page-pendientes" style="display:none">
+        <div class="page-header">
+          <div>
+            <div class="page-title">⏳ Pendientes de revisión</div>
+            <div class="page-sub">Incidencias que requieren categoría y acción correctora</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="table-wrap" id="pendientes-table"></div>
+        </div>
+      </div>
+
+      <div class="page" id="page-categorias" style="display:none">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Categorías por área</div>
+            <div class="page-sub">Mantén los desplegables de categoría sin cambiar el flujo actual de revisión.</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="App.catalogos.refresh()">🔄 Recargar</button>
+        </div>
+        <div class="categorias-admin-grid" id="categorias-admin-grid"></div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════
+       MODAL DETALLE NC
+  ═══════════════════════════════════ -->
+  <div class="modal-overlay" id="modal-nc">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div style="font-size:18px;font-weight:700" id="modal-nc-id">Incidencia-0000</div>
+          <div style="font-size:12px;color:var(--text-low);margin-top:2px" id="modal-nc-meta"></div>
+        </div>
+        <button class="modal-close" onclick="App.modal.close()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="detail-grid" id="modal-fields"></div>
+
+        <!-- Historial -->
+        <div style="margin-top:24px">
+          <div style="font-size:12px;font-weight:700;color:var(--text-low);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Historial de cambios</div>
+          <div id="modal-historial"></div>
+        </div>
+
+        <!-- Acciones admin -->
+        <div id="modal-admin-actions" style="display:none;margin-top:20px;padding-top:18px;border-top:1px solid var(--border)">
+          <div style="font-size:12px;font-weight:700;color:var(--text-low);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">Cambiar estado</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+            <button class="btn btn-sm" style="background:#fde8e6;color:#b03a2e;border:none" onclick="App.modal.changeStatus('Abierta')">🔴 Abierta</button>
+            <button class="btn btn-sm" style="background:var(--teal-50);color:var(--teal-800);border:none" onclick="App.modal.changeStatus('Cerrada')">🟢 Cerrada</button>
+          </div>
+          <button class="btn btn-sm" style="background:var(--teal-700);color:white;border:none;width:100%" onclick="App.modal.startEdit()">✏️ Editar incidencia</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="App.modal.close()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/catalogos.js"></script>
+  <script src="/js/form.js"></script>
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/incidencias.js"></script>
+  <script src="/js/usuarios.js"></script>
+  <script src="/js/pendientes.js"></script>
+  <script src="/js/app.js"></script>
+
+  <!-- Modal edición -->
+  <div class="modal-overlay" id="modal-edit">
+    <div class="modal" style="max-width:800px">
+      <div class="modal-header">
+        <div>
+          <div style="font-size:18px;font-weight:700" id="edit-nc-id"></div>
+          <div style="font-size:12px;color:var(--text-low);margin-top:2px">Editando incidencia</div>
+        </div>
+        <button class="modal-close" onclick="document.getElementById('modal-edit').classList.remove('open')">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px" id="edit-form">
+
+          <div class="field-group">
+            <label class="field-label">Código Proyecto *</label>
+            <input class="field-input" id="edit-proyecto" type="text">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Proceso / PE *</label>
+            <input class="field-input" id="edit-proceso" type="text">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Fecha detección *</label>
+            <input class="field-input" id="edit-fecha" type="date">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Detectado por *</label>
+            <input class="field-input" id="edit-detecta" type="text">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Departamento *</label>
+            <select class="field-input" id="edit-departamento">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Área</label>
+            <select class="field-input" id="edit-area">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Programa</label>
+            <select class="field-input" id="edit-programa">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Categoría</label>
+            <select class="field-input" id="edit-categoria">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">¿Afecta al MA?</label>
+            <select class="field-input" id="edit-afecta-ma">
+              <option value="false">No</option>
+              <option value="true">Sí</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Afecta resultado</label>
+            <input class="field-input" id="edit-afecta-resultado" type="text">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Valoración €</label>
+            <input class="field-input" id="edit-valoracion" type="number" min="0" step="0.01">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Email destino *</label>
+            <input class="field-input" id="edit-email-destino" type="email">
+          </div>
+          <div class="field-group" style="grid-column:1/-1">
+            <label class="field-label">Descripción *</label>
+            <textarea class="field-input" id="edit-descripcion" rows="3" style="resize:vertical"></textarea>
+          </div>
+          <div class="field-group" style="grid-column:1/-1">
+            <label class="field-label">Causas</label>
+            <textarea class="field-input" id="edit-causas" rows="3" style="resize:vertical"></textarea>
+          </div>
+          <div class="field-group" style="grid-column:1/-1">
+            <label class="field-label">Acción inmediata</label>
+            <textarea class="field-input" id="edit-accion-inmediata" rows="3" style="resize:vertical"></textarea>
+          </div>
+          <div class="field-group" style="grid-column:1/-1">
+            <label class="field-label">Acción correctora</label>
+            <input class="field-input" id="edit-accion-correctora" list="edit-correctora-opciones"
+                   placeholder="Escribe o selecciona una acción correctora...">
+            <datalist id="edit-correctora-opciones">
+              <option value="Formación al personal implicado">
+              <option value="Revisión y actualización del procedimiento">
+            </datalist>        </div>
+          <div id="edit-error" style="grid-column:1/-1;color:var(--danger);font-size:13px;display:none"></div>
+        </div>
+      </div>
+      <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-edit').classList.remove('open')">Cancelar</button>
+        <button class="btn btn-ghost btn-sm" style="border:1px solid var(--teal-400);color:var(--teal-700)" onclick="App.modal.saveEdit(false)">💾 Guardar</button>
+        <button class="btn btn-sm" style="background:var(--teal-700);color:white;border:none" onclick="App.modal.saveEdit(true)">💾 Guardar y notificar al creador</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal responsabilidades -->
+  <div class="modal-overlay" id="modal-responsabilidades">
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header">
+        <div>
+          <div style="font-size:17px;font-weight:700">🏷️ Responsabilidades</div>
+          <div style="font-size:12px;color:var(--text-low);margin-top:2px" id="resp-user-name"></div>
+        </div>
+        <button class="modal-close" onclick="document.getElementById('modal-responsabilidades').classList.remove('open')">✕</button>
+      </div>
+      <div class="modal-body">
+
+        <!-- Añadir nueva -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+          <div class="field-group">
+            <label class="field-label">Tipo</label>
+            <select class="field-input" id="resp-tipo" onchange="App.usuarios.updateValores()">
+              <option value="">— Seleccionar —</option>
+              <option value="area">Área</option>
+              <option value="departamento">Departamento</option>
+              <option value="programa">Programa</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Valor</label>
+            <select class="field-input" id="resp-valor">
+              <option value="">— Selecciona primero el tipo —</option>
+            </select>
+          </div>
+        </div>
+        <div id="resp-error" style="color:var(--danger);font-size:13px;margin-bottom:10px;display:none"></div>
+        <button class="btn btn-sm" style="background:var(--teal-700);color:white;border:none;width:100%;margin-bottom:20px"
+                onclick="App.usuarios.addResponsabilidad()">+ Añadir responsabilidad</button>
+
+        <!-- Lista actual -->
+        <div style="font-size:12px;font-weight:700;color:var(--text-low);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">
+          Responsabilidades asignadas
+        </div>
+        <div id="resp-list"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('modal-responsabilidades').classList.remove('open')">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  </body>
+  </html>

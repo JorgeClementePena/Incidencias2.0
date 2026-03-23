@@ -1,0 +1,20 @@
+{
+  "name": "Incidencias Fidamc",
+  "short_name": "Incidencias Fidamc",
+  "start_url": "/mobile",
+  "display": "standalone",
+  "background_color": "#1a5c4a",
+  "theme_color": "#1a5c4a",
+  "icons": [
+    {
+      "src": "/img/AppFidamc.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/AppFidamc.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

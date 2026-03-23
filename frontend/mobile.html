@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#1a5c4a">
+  <title>Incidencias Fidamc — Nueva Incidencia</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:      #1a5c4a;
+      --green-mid:  #2d7a5f;
+      --green-light:#e8f5f0;
+      --red:        #dc3545;
+      --orange:     #fd7e14;
+      --gray:       #6c757d;
+      --border:     #dee2e6;
+      --bg:         #f8f9fa;
+      --white:      #ffffff;
+      --radius:     12px;
+      --shadow:     0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: #212529;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      background: var(--green);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header .logo { font-size: 22px; }
+    header h1 { font-size: 17px; font-weight: 700; line-height: 1.2; }
+    header p  { font-size: 11px; opacity: 0.8; }
+    header .user-badge {
+      margin-left: auto;
+      background: rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 6px 12px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    header .logout-btn {
+      background: none;
+      border: 1px solid rgba(255,255,255,0.4);
+      color: white;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    /* ── Login ── */
+    #login-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      background: var(--green);
+    }
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .login-card .brand {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .login-card .brand .icon { font-size: 40px; margin-bottom: 8px; }
+    .login-card .brand h2 { font-size: 22px; color: var(--green); font-weight: 700; }
+    .login-card .brand p  { font-size: 13px; color: var(--gray); margin-top: 4px; }
+
+    /* ── Main content ── */
+    #app-screen { display: none; padding-bottom: 40px; }
+
+    /* ── Cards / secciones ── */
+    .section {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      margin: 16px;
+      overflow: hidden;
+    }
+    .section-header {
+      background: var(--green-light);
+      border-left: 4px solid var(--green);
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .section-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+    /* ── Campos ── */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #495057;
+    }
+    .field label .req { color: var(--red); margin-left: 2px; }
+    .field input,
+    .field select,
+    .field textarea {
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-family: inherit;
+      background: white;
+      color: #212529;
+      transition: border-color 0.2s;
+      width: 100%;
+      -webkit-appearance: none;
+    }
+    .field input:focus,
+    .field select:focus,
+    .field textarea:focus {
+      outline: none;
+      border-color: var(--green-mid);
+      box-shadow: 0 0 0 3px rgba(45,122,95,0.12);
+    }
+    .field textarea { resize: vertical; min-height: 90px; line-height: 1.5; }
+    .field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236c757d' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+    /* ── Toggle afecta MA ── */
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+    }
+    .toggle-row label { font-size: 14px; font-weight: 600; color: #495057; }
+    .toggle {
+      position: relative;
+      width: 48px;
+      height: 26px;
+      flex-shrink: 0;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle .slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 26px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .toggle .slider::before {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked + .slider { background: var(--green); }
+    .toggle input:checked + .slider::before { transform: translateX(22px); }
+
+    /* ── Botones ── */
+    .btn {
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: none;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: var(--green);
+      color: white;
+    }
+    .btn-primary:active { background: var(--green-mid); transform: scale(0.98); }
+    .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
+    .btn-outline {
+      background: transparent;
+      color: var(--green);
+      border: 1.5px solid var(--green);
+    }
+
+    .btn-secondary {
+      background: #eef3f1;
+      color: var(--green);
+    }
+
+    .admin-tabs {
+      display: none;
+      gap: 10px;
+      padding: 16px 16px 0;
+    }
+    .admin-tabs.show { display: flex; }
+    .tab-btn {
+      flex: 1;
+      border: 1.5px solid var(--green);
+      background: white;
+      color: var(--green);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: var(--green);
+      color: white;
+    }
+
+    #pending-screen { display: none; }
+    .pending-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .pending-card {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .pending-card h3 {
+      font-size: 15px;
+      color: var(--green);
+    }
+    .pending-meta {
+      font-size: 12px;
+      color: var(--gray);
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .pending-desc {
+      font-size: 13px;
+      line-height: 1.45;
+      color: #495057;
+    }
+    .pending-details {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: #f7faf8;
+      border: 1px solid var(--border);
+    }
+    .pending-detail {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .pending-detail-key {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .pending-detail-value {
+      font-size: 14px;
+      line-height: 1.45;
+      color: #212529;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .pending-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .pending-actions .btn {
+      padding: 12px 14px;
+    }
+    .empty-state {
+      color: var(--gray);
+      font-size: 14px;
+      text-align: center;
+      padding: 12px 0;
+    }
+
+    /* ── Errores y alertas ── */
+    .error-msg {
+      background: #fff5f5;
+      border: 1px solid #ffc9c9;
+      color: var(--red);
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 13px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    /* ── Éxito ── */
+    #success-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      padding: 32px 24px;
+      text-align: center;
+    }
+    #success-screen .check { font-size: 72px; margin-bottom: 16px; }
+    #success-screen h2 { font-size: 22px; font-weight: 700; color: var(--green); margin-bottom: 8px; }
+    #success-screen p  { color: var(--gray); font-size: 15px; line-height: 1.5; margin-bottom: 24px; }
+    #success-screen .nc-badge {
+      background: var(--green-light);
+      border: 1px solid var(--green);
+      color: var(--green);
+      border-radius: 12px;
+      padding: 10px 24px;
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    /* ── Loading ── */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+      vertical-align: middle;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Hint de campo ── */
+    .field-hint { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════ LOGIN ════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="brand">
+      <div class="icon">⚙️</div>
+      <h2>Incidencias fidamc</h2>
+      <p>Gestión de incidencias</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="field">
+        <label>Correo electrónico</label>
+        <input type="email" id="m-email" placeholder="tu@empresa.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="m-pass" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div id="login-err" class="error-msg"></div>
+      <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Iniciar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════ APP ════════════════════════════════ -->
+<div id="app-screen">
+  <header>
+    <div class="logo">⚙️</div>
+    <div>
+      <h1>Incidencias Fidamc</h1>
+      <p>Nueva Incidencia</p>
+    </div>
+    <div class="user-badge">
+      <span id="hdr-name"></span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Salir</button>
+  </header>
+
+  <div id="admin-tabs" class="admin-tabs">
+    <button id="tab-form" class="tab-btn active" onclick="switchMobileView('form')">Nueva</button>
+    <button id="tab-pending" class="tab-btn" onclick="switchMobileView('pending')">Pendientes</button>
+  </div>
+
+  <!-- Éxito -->
+  <div id="success-screen">
+    <div class="check">✅</div>
+    <h2>¡Incidencia registrada!</h2>
+    <p>La incidencia ha sido creada correctamente y se ha enviado notificación al responsable.</p>
+    <div class="nc-badge" id="success-nc-id"></div>
+    <button class="btn btn-primary" onclick="resetForm()">Registrar otra incidencia</button>
+  </div>
+
+  <!-- Formulario -->
+  <div id="form-area">
+
+    <!-- IDENTIFICACIÓN -->
+    <div class="section">
+      <div class="section-header">📋 Identificación</div>
+      <div class="section-body">
+        <div class="field">
+          <label>Código de proyecto <span class="req">*</span></label>
+          <input type="text" id="m-proyecto" placeholder="Ej: AIRBUS-A320">
+        </div>
+        <div class="field">
+          <label>Proceso <span class="req">*</span></label>
+          <input type="text" id="m-proceso" placeholder="Ej: 2023/181">
+        </div>
+        <div class="field">
+          <label>Fecha de detección <span class="req">*</span></label>
+          <input type="date" id="m-fecha">
+        </div>
+        <div class="field">
+          <label>Detectado por <span class="req">*</span></label>
+          <input type="text" id="m-detecta" placeholder="Nombre y departamento">
+        </div>
+      </div>
+    </div>
+
+    <!-- CLASIFICACIÓN -->
+    <div class="section">
+      <div class="section-header">🏷️ Clasificación</div>
+      <div class="section-body">
+        <div class="field">
+          <label>Departamento <span class="req">*</span></label>
+          <select id="m-departamento">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Área</label>
+          <select id="m-area">
+            <option value="">Selecciona área...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Programa</label>
+          <select id="m-programa">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESCRIPCIÓN -->
+    <div class="section">
+      <div class="section-header">📝 Descripción</div>
+      <div class="section-body">
+        <div class="field">
+          <label>Descripción de la incidencia <span class="req">*</span></label>
+          <textarea id="m-descripcion" placeholder="Describe detalladamente la incidencia detectada..." rows="4"></textarea>
+        </div>
+        <div class="field">
+          <label>Causas identificadas</label>
+          <textarea id="m-causas" placeholder="¿Cuál es la causa raíz?" rows="3"></textarea>
+        </div>
+        <div class="field">
+          <label>Acción inmediata tomada</label>
+          <textarea id="m-accion-inmediata" placeholder="¿Qué se ha hecho de inmediato?" rows="3"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- IMPACTO -->
+    <div class="section">
+      <div class="section-header">💶 Impacto</div>
+      <div class="section-body">
+        <div class="field">
+          <label>Valoración económica (€)</label>
+          <input type="number" id="m-valoracion" placeholder="0.00" min="0" step="0.01">
+          <span class="field-hint">Deja en blanco si no se puede estimar todavía</span>
+        </div>
+        <div class="toggle-row">
+          <label>¿Afecta al Medio Ambiente?</label>
+          <label class="toggle">
+            <input type="checkbox" id="m-afecta-ma">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="field">
+          <label>¿Afecta al resultado?</label>
+          <input type="text" id="m-afecta-resultado" placeholder="Describe el impacto en resultado...">
+        </div>
+      </div>
+    </div>
+
+    <!-- ENVIAR -->
+    <div style="margin: 16px;">
+      <div id="form-err" class="error-msg" style="margin-bottom:12px;"></div>
+      <button class="btn btn-primary" id="submit-btn" onclick="submitNC()">
+        Registrar Incidencia
+      </button>
+    </div>
+
+  </div><!-- /form-area -->
+
+  <div id="pending-screen">
+    <div class="section">
+      <div class="section-header">Pendientes de revision</div>
+      <div class="section-body">
+        <div id="pending-list" class="pending-list">
+          <div class="empty-state">Cargando pendientes...</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pending-editor" class="section" style="display:none;">
+      <div class="section-header">Revisar incidencia</div>
+      <div class="section-body">
+        <div id="pending-editor-id" class="field-hint"></div>
+        <div class="field">
+          <label>Codigo de proyecto <span class="req">*</span></label>
+          <input type="text" id="m-review-proyecto" placeholder="Ej: AIRBUS-A320">
+        </div>
+        <div class="field">
+          <label>Proceso <span class="req">*</span></label>
+          <select id="m-review-proceso">
+            <option value="">Selecciona proceso...</option>
+            <option>PE-01</option>
+            <option>PE-02</option>
+            <option>PE-03</option>
+            <option>PE-04</option>
+            <option>PE-05</option>
+            <option>PE-06</option>
+            <option>PE-07</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha de deteccion <span class="req">*</span></label>
+          <input type="date" id="m-review-fecha">
+        </div>
+        <div class="field">
+          <label>Detectado por <span class="req">*</span></label>
+          <input type="text" id="m-review-detecta" placeholder="Nombre y departamento">
+        </div>
+        <div class="field">
+          <label>Departamento <span class="req">*</span></label>
+          <select id="m-review-departamento">
+            <option value="">Selecciona departamento...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Area</label>
+          <select id="m-review-area">
+            <option value="">Selecciona area...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Programa</label>
+          <select id="m-review-programa">
+            <option value="">Selecciona programa...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Programa descripcion</label>
+          <input type="text" id="m-review-programa-desc" placeholder="Descripcion del programa">
+        </div>
+        <div class="field">
+          <label>Email destino</label>
+          <input type="text" id="m-review-email-destino" placeholder="destino@empresa.com">
+        </div>
+        <div class="field">
+          <label>Categoria <span class="req">*</span></label>
+          <select id="m-review-categoria">
+            <option value="">Selecciona categoria...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Accion correctora <span class="req">*</span></label>
+          <input type="text" id="m-review-accion-correctora" list="m-review-correctora-opciones"
+                 placeholder="Escribe o selecciona una accion correctora...">
+          <datalist id="m-review-correctora-opciones">
+            <option value="Formación al personal implicado">
+            <option value="Revisión y actualización del procedimiento">
+          </datalist>
+        </div>
+        <div class="field">
+          <label>Afecta al MA</label>
+          <select id="m-review-afecta-ma">
+            <option value="false">No</option>
+            <option value="true">Si</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Afecta al resultado</label>
+          <input type="text" id="m-review-afecta-resultado" placeholder="Impacto en resultado">
+        </div>
+        <div class="field">
+          <label>Descripcion <span class="req">*</span></label>
+          <textarea id="m-review-descripcion" rows="4" placeholder="Descripcion de la incidencia..."></textarea>
+        </div>
+        <div class="field">
+          <label>Causas</label>
+          <textarea id="m-review-causas" rows="3" placeholder="Causas identificadas..."></textarea>
+        </div>
+        <div class="field">
+          <label>Accion inmediata</label>
+          <textarea id="m-review-accion-inmediata" rows="3" placeholder="Accion inmediata tomada..."></textarea>
+        </div>
+        <div class="field">
+          <label>Valoracion economica (EUR)</label>
+          <input type="number" id="m-review-valoracion" min="0" step="0.01" placeholder="0.00">
+        </div>
+        <div id="pending-err" class="error-msg"></div>
+        <div class="pending-actions">
+          <button class="btn btn-secondary" type="button" onclick="closePendingEditor()">Cancelar</button>
+          <button class="btn btn-primary" id="pending-save-btn" type="button" onclick="savePendingReview()">Guardar revision</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /app-screen -->
+
+<script>
+const API_BASE = '/api';
+let token = localStorage.getItem('nc_mobile_token');
+let currentUser = null;
+let currentPendingNc = null;
+let mobileCatalogos = {
+  areas: ['Producción', 'NDT', 'Laboratorio', 'Ingeniería', 'G-CAD'],
+  departamentos: [
+    'Laboratorio y NDT',
+    'Nextgen factory',
+    'Producción',
+    'Prototipos',
+    'Termoestables',
+    'Termoplásticos',
+    'Nuevas tecnologías'
+  ],
+  programas: [
+    'Laboratorio y Calidad',
+    'Programa aeronáuticos',
+    'Programa Airbus comercial',
+    'Programa no aeronáuticos',
+    'Programa finanzas'
+  ],
+  categoriasPorArea: {}
+};
+
+// ── Al cargar ────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  // Poner fecha de hoy por defecto
+  document.getElementById('m-fecha').value = new Date().toISOString().split('T')[0];
+  bindMobileCatalogEvents();
+
+  if (token) {
+    // Verificar que el token sigue siendo válido
+    fetch(`${API_BASE}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(async data => { currentUser = data.user; await showApp(); })
+      .catch(() => { localStorage.removeItem('nc_mobile_token'); });
+  }
+});
+
+// ── Login ────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('m-email').value.trim();
+  const pass  = document.getElementById('m-pass').value;
+  const errEl = document.getElementById('login-err');
+  const btn   = document.getElementById('login-btn');
+
+  errEl.classList.remove('show');
+  if (!email || !pass) { showErr(errEl, 'Introduce email y contraseña.'); return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Entrando...';
+
+  try {
+    const res  = await fetch(`${API_BASE}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password: pass })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al iniciar sesión.');
+
+    token = data.token;
+    currentUser = data.user;
+    localStorage.setItem('nc_mobile_token', token);
+    await showApp();
+  } catch (err) {
+    showErr(errEl, err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Iniciar sesión';
+  }
+}
+
+// Permitir Enter en el campo de contraseña
+document.getElementById('m-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function showApp() {
+  await loadMobileCatalogos();
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display   = 'block';
+  document.getElementById('hdr-name').textContent = currentUser.name.split(' ')[0];
+  document.getElementById('m-detecta').value = currentUser.name;
+  const isAdmin = currentUser.role === 'admin';
+  document.getElementById('admin-tabs').classList.toggle('show', isAdmin);
+  switchMobileView(isAdmin ? 'pending' : 'form');
+}
+
+function doLogout() {
+  localStorage.removeItem('nc_mobile_token');
+  token = null;
+  currentUser = null;
+  currentPendingNc = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display   = 'none';
+  document.getElementById('admin-tabs').classList.remove('show');
+  document.getElementById('pending-editor').style.display = 'none';
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('form-area').style.display = 'block';
+}
+
+function switchMobileView(view) {
+  const isAdmin = currentUser && currentUser.role === 'admin';
+  const formArea = document.getElementById('form-area');
+  const success = document.getElementById('success-screen');
+  const pending = document.getElementById('pending-screen');
+  const tabForm = document.getElementById('tab-form');
+  const tabPending = document.getElementById('tab-pending');
+
+  if (view === 'pending' && isAdmin) {
+    formArea.style.display = 'none';
+    success.style.display = 'none';
+    pending.style.display = 'block';
+    tabForm.classList.remove('active');
+    tabPending.classList.add('active');
+    loadPendingList();
+  } else {
+    formArea.style.display = 'block';
+    success.style.display = 'none';
+    pending.style.display = 'none';
+    if (tabForm) tabForm.classList.add('active');
+    if (tabPending) tabPending.classList.remove('active');
+  }
+  window.scrollTo(0, 0);
+}
+
+async function loadPendingList() {
+  if (!currentUser || currentUser.role !== 'admin') return;
+
+  const list = document.getElementById('pending-list');
+  list.innerHTML = '<div class="empty-state">Cargando pendientes...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/nc?pendientes=true&limit=100&page=1`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const listData = data.data || data.items || [];
+    if (!res.ok) throw new Error(data.error || 'No se pudieron cargar las pendientes.');
+
+    if (!listData.length) {
+      list.innerHTML = '<div class="empty-state">No hay incidencias pendientes.</div>';
+      return;
+    }
+
+    list.innerHTML = listData.map(nc => `
+      <div class="pending-card">
+        <h3>${escapeHtml(nc.id)}</h3>
+        <div class="pending-meta">
+          <div><strong>Proyecto:</strong> ${escapeHtml(nc.codigo_proyecto || 'Sin proyecto')}</div>
+          <div><strong>Departamento:</strong> ${escapeHtml(nc.departamento || 'Sin departamento')}</div>
+          <div><strong>Detectado por:</strong> ${escapeHtml(nc.detectado_por || 'Sin dato')}</div>
+        </div>
+        <div class="pending-desc">${escapeHtml(nc.descripcion || 'Sin descripción')}</div>
+        <button class="btn btn-primary" type="button" onclick="openPendingEditor('${nc.id}')">Revisar</button>
+      </div>
+    `).join('');
+  } catch (err) {
+    list.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+  }
+}
+
+async function openPendingEditor(ncId) {
+  const errEl = document.getElementById('pending-err');
+  errEl.classList.remove('show');
+
+  try {
+    const res = await fetch(`${API_BASE}/nc/${ncId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'No se pudo cargar la incidencia.');
+
+    currentPendingNc = data.nc;
+    document.getElementById('pending-editor-id').textContent = `${data.nc.id} - ${data.nc.codigo_proyecto || 'Sin proyecto'}`;
+    document.getElementById('m-review-proyecto').value = data.nc.codigo_proyecto || '';
+    document.getElementById('m-review-proceso').value = data.nc.proceso || '';
+    document.getElementById('m-review-fecha').value = data.nc.fecha_deteccion?.split('T')[0] || '';
+    document.getElementById('m-review-detecta').value = data.nc.detectado_por || '';
+    document.getElementById('m-review-departamento').value = data.nc.departamento || '';
+    document.getElementById('m-review-area').value = data.nc.area || '';
+    document.getElementById('m-review-programa').value = data.nc.programa || '';
+    document.getElementById('m-review-programa-desc').value = data.nc.programa_desc || '';
+    document.getElementById('m-review-email-destino').value = data.nc.email_destino || '';
+    syncMobileReviewCategorias(data.nc.area || '', data.nc.categoria || '');
+    document.getElementById('m-review-afecta-ma').value = data.nc.afecta_ma ? 'true' : 'false';
+    document.getElementById('m-review-afecta-resultado').value = data.nc.afecta_resultado || '';
+    document.getElementById('m-review-descripcion').value = data.nc.descripcion || '';
+    document.getElementById('m-review-accion-correctora').value = data.nc.accion_correctora || '';
+    document.getElementById('m-review-causas').value = data.nc.causas || '';
+    document.getElementById('m-review-accion-inmediata').value = data.nc.accion_inmediata || '';
+    document.getElementById('m-review-valoracion').value = data.nc.valoracion_euros || 0;
+    document.getElementById('pending-editor').style.display = 'block';
+    window.scrollTo(0, document.getElementById('pending-editor').offsetTop - 12);
+  } catch (err) {
+    showErr(errEl, err.message);
+  }
+}
+
+function closePendingEditor() {
+  currentPendingNc = null;
+  document.getElementById('pending-editor').style.display = 'none';
+  document.getElementById('pending-err').classList.remove('show');
+}
+
+async function savePendingReview() {
+  const errEl = document.getElementById('pending-err');
+  const btn = document.getElementById('pending-save-btn');
+  errEl.classList.remove('show');
+
+  if (!currentPendingNc) {
+    return showErr(errEl, 'No hay ninguna incidencia seleccionada.');
+  }
+
+  const categoria = v('m-review-categoria');
+  const accionCorrectora = v('m-review-accion-correctora');
+  const codigoProyecto = v('m-review-proyecto');
+  const proceso = v('m-review-proceso');
+  const fechaDeteccion = v('m-review-fecha');
+  const detectadoPor = v('m-review-detecta');
+  const departamento = v('m-review-departamento');
+  const descripcion = v('m-review-descripcion');
+
+  if (!codigoProyecto) return showErr(errEl, 'El codigo de proyecto es obligatorio.');
+  if (!proceso) return showErr(errEl, 'El proceso es obligatorio.');
+  if (!fechaDeteccion) return showErr(errEl, 'La fecha de deteccion es obligatoria.');
+  if (!detectadoPor) return showErr(errEl, 'Detectado por es obligatorio.');
+  if (!departamento) return showErr(errEl, 'El departamento es obligatorio.');
+  if (!descripcion) return showErr(errEl, 'La descripcion es obligatoria.');
+  if (!categoria) return showErr(errEl, 'La categoria es obligatoria.');
+  if (!accionCorrectora) return showErr(errEl, 'La accion correctora es obligatoria.');
+
+  const payload = {
+    codigo_proyecto: codigoProyecto,
+    proceso,
+    fecha_deteccion: fechaDeteccion,
+    detectado_por: detectadoPor,
+    departamento,
+    area: v('m-review-area'),
+    programa: v('m-review-programa'),
+    programa_desc: v('m-review-programa-desc'),
+    categoria,
+    afecta_ma: document.getElementById('m-review-afecta-ma').value === 'true',
+    afecta_resultado: v('m-review-afecta-resultado'),
+    descripcion,
+    causas: v('m-review-causas'),
+    accion_inmediata: v('m-review-accion-inmediata'),
+    accion_correctora: accionCorrectora,
+    valoracion_euros: v('m-review-valoracion') || 0,
+    email_destino: v('m-review-email-destino'),
+    notificar_creador: false
+  };
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Guardando...';
+
+  try {
+    const res = await fetch(`${API_BASE}/nc/${currentPendingNc.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'No se pudo guardar la revision.');
+
+    closePendingEditor();
+    await loadPendingList();
+    window.scrollTo(0, 0);
+  } catch (err) {
+    showErr(errEl, err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Guardar revision';
+  }
+}
+
+// ── Enviar NC ────────────────────────────────────────────────
+async function submitNC() {
+  const errEl = document.getElementById('form-err');
+  const btn   = document.getElementById('submit-btn');
+  errEl.classList.remove('show');
+
+  const data = {
+    codigo_proyecto:   v('m-proyecto'),
+    proceso:           v('m-proceso'),
+    fecha_deteccion:   v('m-fecha'),
+    detectado_por:     v('m-detecta'),
+    departamento:      v('m-departamento'),
+    area:              v('m-area'),
+    programa:          v('m-programa'),
+    descripcion:       v('m-descripcion'),
+    causas:            v('m-causas'),
+    accion_inmediata:  v('m-accion-inmediata'),
+    valoracion_euros:  parseFloat(v('m-valoracion')) || 0,
+    afecta_ma:         document.getElementById('m-afecta-ma').checked,
+    afecta_resultado:  v('m-afecta-resultado'),
+  };
+
+  // Validación
+  if (!data.codigo_proyecto) return showErr(errEl, 'El código de proyecto es obligatorio.');
+  if (!data.proceso)         return showErr(errEl, 'Selecciona un proceso.');
+  if (!data.fecha_deteccion) return showErr(errEl, 'La fecha de detección es obligatoria.');
+  if (!data.detectado_por)   return showErr(errEl, 'El campo "Detectado por" es obligatorio.');
+  if (!data.departamento)    return showErr(errEl, 'Selecciona un departamento.');
+  if (!data.descripcion)     return showErr(errEl, 'La descripción es obligatoria.');
+
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Registrando...';
+
+  try {
+    const res = await fetch(`${API_BASE}/nc`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Error al crear la incidencia.');
+
+    // Mostrar éxito
+    document.getElementById('form-area').style.display    = 'none';
+    document.getElementById('success-screen').style.display = 'flex';
+    document.getElementById('success-nc-id').textContent  = result.nc.id;
+    window.scrollTo(0, 0);
+  } catch (err) {
+    showErr(errEl, err.message);
+    window.scrollTo(0, document.getElementById('form-err').offsetTop - 20);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Registrar Incidencia';
+  }
+}
+
+function resetForm() {
+  document.getElementById('success-screen').style.display = 'none';
+  document.getElementById('form-area').style.display      = 'block';
+  document.getElementById('pending-screen').style.display = 'none';
+  if (document.getElementById('tab-form')) document.getElementById('tab-form').classList.add('active');
+  if (document.getElementById('tab-pending')) document.getElementById('tab-pending').classList.remove('active');
+  // Limpiar campos (excepto detectado_por)
+  ['m-proyecto','m-causas','m-accion-inmediata','m-descripcion','m-valoracion','m-afecta-resultado'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  ['m-proceso','m-departamento','m-area','m-programa'].forEach(id => {
+    document.getElementById(id).selectedIndex = 0;
+  });
+  syncMobileReviewCategorias('', '');
+  document.getElementById('m-afecta-ma').checked = false;
+  document.getElementById('m-fecha').value = new Date().toISOString().split('T')[0];
+  if (currentUser) document.getElementById('m-detecta').value = currentUser.name;
+  window.scrollTo(0, 0);
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+function v(id) { return document.getElementById(id).value.trim(); }
+function showErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
+function fillSelect(id, values, placeholder, selectedValue = '') {
+  const select = document.getElementById(id);
+  if (!select) return;
+  const options = [`<option value="">${escapeHtml(placeholder)}</option>`]
+    .concat(values.map(value => {
+      const selected = value === selectedValue ? ' selected' : '';
+      return `<option value="${escapeHtml(value)}"${selected}>${escapeHtml(value)}</option>`;
+    }));
+  select.innerHTML = options.join('');
+}
+function applyMobileCatalogos() {
+  fillSelect('m-departamento', mobileCatalogos.departamentos || [], '— Seleccionar —', document.getElementById('m-departamento')?.value || '');
+  fillSelect('m-area', mobileCatalogos.areas || [], 'Selecciona área...', document.getElementById('m-area')?.value || '');
+  fillSelect('m-programa', mobileCatalogos.programas || [], '— Seleccionar —', document.getElementById('m-programa')?.value || '');
+
+  fillSelect('m-review-departamento', mobileCatalogos.departamentos || [], 'Selecciona departamento...', document.getElementById('m-review-departamento')?.value || '');
+  fillSelect('m-review-area', mobileCatalogos.areas || [], 'Selecciona área...', document.getElementById('m-review-area')?.value || '');
+  fillSelect('m-review-programa', mobileCatalogos.programas || [], 'Selecciona programa...', document.getElementById('m-review-programa')?.value || '');
+
+  syncMobileReviewCategorias(
+    document.getElementById('m-review-area')?.value || '',
+    document.getElementById('m-review-categoria')?.value || ''
+  );
+}
+async function loadMobileCatalogos() {
+  if (!token) return;
+  try {
+    const res = await fetch(`${API_BASE}/catalogos/config`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'No se pudieron cargar los catálogos.');
+    mobileCatalogos = {
+      ...mobileCatalogos,
+      ...data,
+      categoriasPorArea: data.categoriasPorArea || {}
+    };
+    applyMobileCatalogos();
+  } catch (err) {
+    console.error('[mobile] catalogos:', err.message);
+  }
+}
+function syncMobileReviewCategorias(area, selectedValue = '') {
+  const categorias = mobileCatalogos.categoriasPorArea?.[area] || [];
+  fillSelect(
+    'm-review-categoria',
+    categorias,
+    area ? 'Selecciona categoria...' : 'Selecciona primero el area...',
+    categorias.includes(selectedValue) ? selectedValue : ''
+  );
+
+  const select = document.getElementById('m-review-categoria');
+  if (!select) return;
+
+  if (selectedValue && !categorias.includes(selectedValue)) {
+    const option = document.createElement('option');
+    option.value = selectedValue;
+    option.textContent = `${selectedValue} (legacy)`;
+    option.selected = true;
+    select.appendChild(option);
+  }
+
+  select.disabled = !area;
+}
+function bindMobileCatalogEvents() {
+  const reviewArea = document.getElementById('m-review-area');
+  if (reviewArea && reviewArea.dataset.bound !== 'true') {
+    reviewArea.dataset.bound = 'true';
+    reviewArea.addEventListener('change', () => syncMobileReviewCategorias(reviewArea.value, ''));
+  }
+}
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+</script>
+</body>
+</html>
