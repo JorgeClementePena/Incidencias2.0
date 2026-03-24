@@ -79,6 +79,22 @@ app.use((err, req, res, next) => {
 
 async function ensureRuntimeSchema() {
   await query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id CHAR(36) NOT NULL DEFAULT (UUID()),
+      name VARCHAR(120) NOT NULL,
+      email VARCHAR(200) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      role ENUM('admin','user') NOT NULL DEFAULT 'user',
+      department VARCHAR(100) DEFAULT NULL,
+      active TINYINT(1) NOT NULL DEFAULT 1,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_users_email (email)
+    ) ENGINE=InnoDB
+  `);
+
+  await query(`
     CREATE TABLE IF NOT EXISTS pending_registrations (
       temp_id CHAR(36) NOT NULL,
       name VARCHAR(120) NOT NULL,
@@ -89,7 +105,50 @@ async function ensureRuntimeSchema() {
       expires_at DATETIME NOT NULL,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (temp_id),
-      UNIQUE KEY uk_pending_email (email)
+      UNIQUE KEY uk_pending_email (email),
+      KEY idx_pending_expires (expires_at)
+    ) ENGINE=InnoDB
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS no_conformidades (
+      id VARCHAR(20) NOT NULL,
+      seq INT NOT NULL AUTO_INCREMENT UNIQUE,
+      codigo_proyecto VARCHAR(100) NOT NULL,
+      proceso VARCHAR(100) NOT NULL,
+      fecha_deteccion DATE NOT NULL,
+      detectado_por VARCHAR(150) NOT NULL,
+      departamento VARCHAR(100) NOT NULL,
+      area VARCHAR(50) DEFAULT NULL,
+      programa VARCHAR(150) DEFAULT NULL,
+      categoria VARCHAR(255) DEFAULT NULL,
+      programa_desc VARCHAR(200) DEFAULT NULL,
+      afecta_ma TINYINT(1) NOT NULL DEFAULT 0,
+      afecta_resultado VARCHAR(200) DEFAULT NULL,
+      descripcion TEXT NOT NULL,
+      causas TEXT DEFAULT NULL,
+      accion_inmediata TEXT DEFAULT NULL,
+      accion_correctora TEXT DEFAULT NULL,
+      valoracion_euros DECIMAL(12,2) DEFAULT 0.00,
+      estado ENUM('Abierta','Cerrada') NOT NULL DEFAULT 'Abierta',
+      revisada TINYINT(1) NOT NULL DEFAULT 0,
+      email_destino VARCHAR(200) DEFAULT NULL,
+      email_cc VARCHAR(200) DEFAULT NULL,
+      email_remitente VARCHAR(200) DEFAULT NULL,
+      creado_por CHAR(36) DEFAULT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      closed_at DATETIME DEFAULT NULL,
+      PRIMARY KEY (id),
+      KEY idx_nc_fecha (fecha_deteccion),
+      KEY idx_nc_estado (estado),
+      KEY idx_nc_revisada (revisada),
+      KEY idx_nc_area (area),
+      KEY idx_nc_dept (departamento),
+      KEY idx_nc_programa (programa),
+      KEY idx_nc_categoria (categoria),
+      KEY idx_nc_created (created_at),
+      CONSTRAINT fk_nc_creado_por FOREIGN KEY (creado_por) REFERENCES users(id) ON DELETE SET NULL
     ) ENGINE=InnoDB
   `);
 
@@ -103,7 +162,54 @@ async function ensureRuntimeSchema() {
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       PRIMARY KEY (id),
-      UNIQUE KEY uk_area_categoria (area, nombre)
+      UNIQUE KEY uk_area_categoria (area, nombre),
+      KEY idx_area_categorias_area (area),
+      KEY idx_area_categorias_activa (activa)
+    ) ENGINE=InnoDB
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS nc_historial (
+      id CHAR(36) NOT NULL DEFAULT (UUID()),
+      nc_id VARCHAR(20) NOT NULL,
+      campo VARCHAR(50) NOT NULL,
+      valor_antes TEXT DEFAULT NULL,
+      valor_nuevo TEXT DEFAULT NULL,
+      cambiado_por CHAR(36) DEFAULT NULL,
+      cambiado_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      KEY idx_hist_nc (nc_id),
+      CONSTRAINT fk_hist_nc FOREIGN KEY (nc_id) REFERENCES no_conformidades(id) ON DELETE CASCADE,
+      CONSTRAINT fk_hist_cambiado_por FOREIGN KEY (cambiado_por) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS email_log (
+      id CHAR(36) NOT NULL DEFAULT (UUID()),
+      nc_id VARCHAR(20) DEFAULT NULL,
+      destinatario VARCHAR(200) NOT NULL,
+      cc VARCHAR(200) DEFAULT NULL,
+      asunto VARCHAR(300) DEFAULT NULL,
+      enviado TINYINT(1) NOT NULL DEFAULT 0,
+      error_msg TEXT DEFAULT NULL,
+      sent_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      CONSTRAINT fk_email_log_nc FOREIGN KEY (nc_id) REFERENCES no_conformidades(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS user_responsabilidades (
+      id CHAR(36) NOT NULL DEFAULT (UUID()),
+      user_id CHAR(36) NOT NULL,
+      tipo ENUM('area','departamento','programa') NOT NULL,
+      valor VARCHAR(150) NOT NULL,
+      PRIMARY KEY (id),
+      KEY idx_resp_user (user_id),
+      KEY idx_resp_tipo (tipo),
+      KEY idx_resp_valor (valor),
+      CONSTRAINT fk_resp_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB
   `);
 

@@ -15,8 +15,8 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
       - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
-    ports:
-      - "3306:3306"          # quitar en producción si no necesitas acceso externo
+    #ports:
+    #  - "3306:3306"          # quitar en producción si no necesitas acceso externo
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
       interval: 10s
