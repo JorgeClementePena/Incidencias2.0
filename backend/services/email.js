@@ -3,14 +3,25 @@
 const nodemailer = require('nodemailer');
 const { query } = require('../db/db');
 
-const smtpReady = !!(process.env.SMTP_USER && process.env.SMTP_PASS);
+const smtpHost = (process.env.SMTP_HOST || '').trim();
+const smtpPort = parseInt(process.env.SMTP_PORT || '25', 10);
+const smtpUser = (process.env.SMTP_USER || '').trim();
+const smtpPass = process.env.SMTP_PASS || '';
+const smtpReady = !!smtpHost;
 
-const transporter = smtpReady ? nodemailer.createTransport({
-  host:   process.env.SMTP_HOST || 'smtp.gmail.com',
-  port:   parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_PORT === '465',
-  auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-}) : null;
+const transporter = smtpReady ? (() => {
+  const config = {
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+  };
+
+  if (smtpUser && smtpPass) {
+    config.auth = { user: smtpUser, pass: smtpPass };
+  }
+
+  return nodemailer.createTransport(config);
+})() : null;
 
 if (transporter) {
   transporter.verify().then(() => {
@@ -91,7 +102,7 @@ async function sendNCEmail(nc) {
 
   try {
     await transporter.sendMail({
-      from: `"Incidencias Fidamc" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+      from: `"Incidencias Fidamc" <${process.env.EMAIL_FROM || smtpUser}>`,
       to, cc, subject,
       html: buildEmailHTML(nc),
     });
@@ -127,7 +138,7 @@ async function sendVerificationEmail(email, name, code) {
   }
 
   await transporter.sendMail({
-    from: `"Incidencias Fidamc" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+    from: `"Incidencias Fidamc" <${process.env.EMAIL_FROM || smtpUser}>`,
     to:   email,
     subject: 'Tu código de verificación — Incidencias Fidamc',
     html,
@@ -158,7 +169,7 @@ async function sendEditNotification(nc, emailCreador) {
   }
 
   await transporter.sendMail({
-    from: `"Incidencias Fidamc" <${process.env.EMAIL_FROM || process.env.SMTP_USER}>`,
+    from: `"Incidencias Fidamc" <${process.env.EMAIL_FROM || smtpUser}>`,
     to:   emailCreador,
     subject,
     html,

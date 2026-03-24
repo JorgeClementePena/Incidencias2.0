@@ -18,10 +18,10 @@ router.post('/register', async (req, res) => {
     const normalizedEmail = (email || '').toLowerCase().trim();
 
     if (!name || !normalizedEmail || !password) {
-      return res.status(400).json({ error: 'Nombre, email y contraseÃ±a son obligatorios.' });
+      return res.status(400).json({ error: 'Nombre, email y contraseña son obligatorios.' });
     }
     if (password.length < 6) {
-      return res.status(400).json({ error: 'La contraseÃ±a debe tener al menos 6 caracteres.' });
+      return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres.' });
     }
     if (!normalizedEmail.endsWith('@fidamc.es')) {
       return res.status(400).json({ error: 'Solo se permiten correos corporativos (@fidamc.es).' });
@@ -29,7 +29,7 @@ router.post('/register', async (req, res) => {
 
     const existing = await query('SELECT id FROM users WHERE email = ?', [normalizedEmail]);
     if (existing.rows.length) {
-      return res.status(409).json({ error: 'Este correo ya estÃ¡ registrado.' });
+      return res.status(409).json({ error: 'Este correo ya está¡ registrado.' });
     }
 
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
@@ -45,7 +45,7 @@ router.post('/register', async (req, res) => {
     );
 
     await sendVerificationEmail(normalizedEmail, name.trim(), code);
-    res.status(200).json({ message: 'CÃ³digo enviado. Revisa tu email.', tempId });
+    res.status(200).json({ message: 'Código enviado. Revisa tu email.', tempId });
   } catch (err) {
     console.error('[AUTH] Register error:', err.message);
     res.status(500).json({ error: 'Error interno del servidor.' });
@@ -66,22 +66,22 @@ router.post('/verify', async (req, res) => {
 
     const pending = pendingRes.rows[0];
     if (!pending) {
-      return res.status(400).json({ error: 'CÃ³digo expirado o invÃ¡lido. Vuelve a registrarte.' });
+      return res.status(400).json({ error: 'Código expirado o inválido. Vuelve a registrarte.' });
     }
 
     if (Date.now() > new Date(pending.expires_at).getTime()) {
       await query('DELETE FROM pending_registrations WHERE temp_id = ?', [tempId]);
-      return res.status(400).json({ error: 'El cÃ³digo ha expirado. Vuelve a registrarte.' });
+      return res.status(400).json({ error: 'El código ha expirado. Vuelve a registrarte.' });
     }
 
     if (pending.code !== code.trim()) {
-      return res.status(400).json({ error: 'CÃ³digo incorrecto.' });
+      return res.status(400).json({ error: 'Código incorrecto.' });
     }
 
     const existing = await query('SELECT id FROM users WHERE email = ?', [pending.email]);
     if (existing.rows.length) {
       await query('DELETE FROM pending_registrations WHERE temp_id = ?', [tempId]);
-      return res.status(409).json({ error: 'Este correo ya estÃ¡ registrado.' });
+      return res.status(409).json({ error: 'Este correo ya está¡ registrado.' });
     }
 
     const userId = crypto.randomUUID();
