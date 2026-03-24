@@ -12,15 +12,7 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
 COPY --from=base /app ./
-
-RUN chown -R appuser:appgroup /app && \
-    find /app -type d -exec chmod 755 {} \; && \
-    find /app -type f -exec chmod 644 {} \;
-
-USER appuser
 
 EXPOSE 3000
 
