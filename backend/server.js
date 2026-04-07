@@ -273,7 +273,7 @@ async function initAdminUser() {
 }
 
 app.listen(PORT, async () => {
-  console.log(`\n🚀 NC Manager en http://localhost:${PORT}`);
+  console.log(`\n🚀 Incidencias Fidamc en http://localhost:${PORT}`);
   console.log(`   BD: ${process.env.DB_NAME||'nc_manager'} @ ${process.env.DB_HOST||'localhost'}:${process.env.DB_PORT||3306}\n`);
   await ensureRuntimeSchema();
   await initAdminUser();
