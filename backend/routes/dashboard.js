@@ -30,7 +30,7 @@ router.get('/kpis', async (req, res) => {
           SUM(estado = 'Abierta')                                       AS abiertas,
           SUM(estado = 'Cerrada')                                       AS cerradas,
           COALESCE(SUM(valoracion_euros), 0)                            AS valoracion_total,
-          SUM(afecta_resultado IS NOT NULL AND afecta_resultado != '')  AS afecta_resultado,
+          SUM(afecta_resultado = 1)                                     AS afecta_resultado,
           SUM(afecta_ma = 1)                                            AS afecta_ma
        FROM no_conformidades ${where}`,
       params

@@ -8,6 +8,12 @@ const departamentos = DEPARTAMENTOS;
 const programas = PROGRAMAS;
 const categoriasPorArea = DEFAULT_CATEGORIAS;
 const estados = ['Abierta', 'Cerrada'];
+const observacionesSeed = [
+  'Importado como dato historico de referencia.',
+  'Pendiente de seguimiento por el responsable del area.',
+  'Se recomienda revisar la recurrencia en el proximo comite.',
+  'Dato de prueba generado para validar filtros y dashboard.',
+];
 
 const proyectos = [
   'AIRBUS-A320',
@@ -230,7 +236,7 @@ async function seed() {
         codigo_proyecto = ?, proceso = ?, fecha_deteccion = ?, detectado_por = ?,
         departamento = ?, area = ?, programa = ?, categoria = ?,
         afecta_ma = ?, afecta_resultado = ?, descripcion = ?,
-        causas = ?, accion_inmediata = ?, accion_correctora = ?,
+        causas = ?, accion_inmediata = ?, accion_correctora = ?, observaciones = ?,
         valoracion_euros = ?, estado = ?, email_destino = ?, creado_por = ?, closed_at = ?, revisada = 1
        WHERE id = ?`,
       [
@@ -243,11 +249,12 @@ async function seed() {
         rand(programas),
         categoria,
         afectaMA,
-        afectaMA ? 'Resultado de auditoría interna' : null,
+        Math.random() < 0.35 ? 1 : 0,
         narrativa.descripcion,
         narrativa.causas,
         narrativa.accionInmediata,
         narrativa.accionCorrectora,
+        Math.random() < 0.45 ? rand(observacionesSeed) : null,
         valoracion,
         estado,
         'prueba@empresa.com',

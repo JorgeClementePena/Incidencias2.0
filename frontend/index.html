@@ -129,6 +129,9 @@
       <button class="nav-item admin-only" data-page="categorias" onclick="App.navigate('categorias')">
         <span class="icon">🏷️</span> Categorías
       </button>
+      <button class="nav-item admin-only" data-page="importacion" onclick="App.navigate('importacion')">
+        <span class="icon">📥</span> Importar Excel
+      </button>
 
       <div style="position:absolute; bottom:0; left:0; right:0; padding:16px; border-top:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px;">
         <img src="/img/LogoFidamc.png" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
@@ -216,7 +219,10 @@
                 </div>
                 <div class="nc-cell">
                   <label>Afecta resultado</label>
-                  <input type="text" id="nc-afecta-resultado" placeholder="¿Qué resultado?">
+                  <select id="nc-afecta-resultado">
+                    <option value="false">No</option>
+                    <option value="true">Sí</option>
+                  </select>
                 </div>
                 <div class="nc-cell">
                   <label>Descripción de la NC <span class="req">*</span></label>
@@ -445,6 +451,36 @@
         <div class="categorias-admin-grid" id="categorias-admin-grid"></div>
       </div>
 
+      <div class="page" id="page-importacion" style="display:none">
+        <div class="page-header">
+          <div>
+            <div class="page-title">Importación de Excel</div>
+            <div class="page-sub">Carga incidencias históricas y valida el contenido antes de insertarlo.</div>
+          </div>
+        </div>
+        <div class="card import-card">
+          <div class="card-body import-grid">
+            <div class="field-group">
+              <label class="field-label">Archivo Excel</label>
+              <input class="field-input" id="import-file" type="file" accept=".xlsx,.xls,.csv">
+            </div>
+            <div class="import-actions">
+              <button class="btn btn-secondary" onclick="App.importacion.preview()">Previsualizar</button>
+              <button class="btn btn-primary" id="import-confirm-btn" onclick="App.importacion.commit()" disabled>Importar filas válidas</button>
+            </div>
+            <div class="import-help">
+              Columnas esperadas: No Incidencias, Área, Categoría, Departamento que reporta, Programa, Cuenta proyecto,
+              Fecha, Valoración, Causas, Acción inmediata, Afecta al MA, Afecta resultado, Acción correcta,
+              Observaciones y Descripción.
+            </div>
+            <div class="import-summary" id="import-summary">
+              <div class="empty-state compact-empty"><p>Sube un archivo para revisar la importación.</p></div>
+            </div>
+            <div class="table-wrap" id="import-preview-table"></div>
+          </div>
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -495,6 +531,7 @@
   <script src="/js/form.js"></script>
   <script src="/js/dashboard.js"></script>
   <script src="/js/incidencias.js"></script>
+  <script src="/js/importacion.js"></script>
   <script src="/js/usuarios.js"></script>
   <script src="/js/pendientes.js"></script>
   <script src="/js/app.js"></script>
@@ -561,7 +598,10 @@
           </div>
           <div class="field-group">
             <label class="field-label">Afecta resultado</label>
-            <input class="field-input" id="edit-afecta-resultado" type="text">
+            <select class="field-input" id="edit-afecta-resultado">
+              <option value="false">No</option>
+              <option value="true">Sí</option>
+            </select>
           </div>
           <div class="field-group">
             <label class="field-label">Valoración €</label>
@@ -590,7 +630,12 @@
             <datalist id="edit-correctora-opciones">
               <option value="Formación al personal implicado">
               <option value="Revisión y actualización del procedimiento">
-            </datalist>        </div>
+            </datalist>
+          </div>
+          <div class="field-group" style="grid-column:1/-1">
+            <label class="field-label">Observaciones</label>
+            <textarea class="field-input" id="edit-observaciones" rows="3" style="resize:vertical"></textarea>
+          </div>
           <div id="edit-error" style="grid-column:1/-1;color:var(--danger);font-size:13px;display:none"></div>
         </div>
       </div>

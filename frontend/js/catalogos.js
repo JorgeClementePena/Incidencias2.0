@@ -2,6 +2,7 @@ const CatalogosModule = (() => {
   const fallback = {
     areas: ['Producción', 'NDT', 'Laboratorio', 'Ingeniería', 'G-CAD'],
     departamentos: [
+      'Ingeniería',
       'Laboratorio y NDT',
       'Nextgen factory',
       'Producción',
@@ -14,6 +15,7 @@ const CatalogosModule = (() => {
       'Laboratorio y Calidad',
       'Programa aeronáuticos',
       'Programa Airbus comercial',
+      'P. no aeronáuticos y P. financiados',
       'Programa no aeronáuticos',
       'Programa finanzas',
     ],

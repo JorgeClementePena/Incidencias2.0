@@ -499,7 +499,10 @@
         </div>
         <div class="field">
           <label>¿Afecta al resultado?</label>
-          <input type="text" id="m-afecta-resultado" placeholder="Describe el impacto en resultado...">
+          <select id="m-afecta-resultado">
+            <option value="false">No</option>
+            <option value="true">Sí</option>
+          </select>
         </div>
       </div>
     </div>
@@ -594,7 +597,10 @@
         </div>
         <div class="field">
           <label>Afecta al resultado</label>
-          <input type="text" id="m-review-afecta-resultado" placeholder="Impacto en resultado">
+          <select id="m-review-afecta-resultado">
+            <option value="false">No</option>
+            <option value="true">Sí</option>
+          </select>
         </div>
         <div class="field">
           <label>Descripcion <span class="req">*</span></label>
@@ -607,6 +613,10 @@
         <div class="field">
           <label>Accion inmediata</label>
           <textarea id="m-review-accion-inmediata" rows="3" placeholder="Accion inmediata tomada..."></textarea>
+        </div>
+        <div class="field">
+          <label>Observaciones</label>
+          <textarea id="m-review-observaciones" rows="3" placeholder="Observaciones adicionales..."></textarea>
         </div>
         <div class="field">
           <label>Valoracion economica (EUR)</label>
@@ -630,6 +640,7 @@ let currentPendingNc = null;
 let mobileCatalogos = {
   areas: ['Producción', 'NDT', 'Laboratorio', 'Ingeniería', 'G-CAD'],
   departamentos: [
+    'Ingeniería',
     'Laboratorio y NDT',
     'Nextgen factory',
     'Producción',
@@ -642,6 +653,7 @@ let mobileCatalogos = {
     'Laboratorio y Calidad',
     'Programa aeronáuticos',
     'Programa Airbus comercial',
+    'P. no aeronáuticos y P. financiados',
     'Programa no aeronáuticos',
     'Programa finanzas'
   ],
@@ -779,6 +791,16 @@ async function loadPendingList() {
           <div><strong>Detectado por:</strong> ${escapeHtml(nc.detectado_por || 'Sin dato')}</div>
         </div>
         <div class="pending-desc">${escapeHtml(nc.descripcion || 'Sin descripción')}</div>
+        <div class="pending-details">
+          <div class="pending-detail">
+            <div class="pending-detail-key">Afecta al resultado</div>
+            <div class="pending-detail-value">${nc.afecta_resultado ? 'Sí' : 'No'}</div>
+          </div>
+          <div class="pending-detail">
+            <div class="pending-detail-key">Observaciones</div>
+            <div class="pending-detail-value">${escapeHtml(nc.observaciones || '—')}</div>
+          </div>
+        </div>
         <button class="btn btn-primary" type="button" onclick="openPendingEditor('${nc.id}')">Revisar</button>
       </div>
     `).join('');
@@ -811,11 +833,12 @@ async function openPendingEditor(ncId) {
     document.getElementById('m-review-email-destino').value = data.nc.email_destino || '';
     syncMobileReviewCategorias(data.nc.area || '', data.nc.categoria || '');
     document.getElementById('m-review-afecta-ma').value = data.nc.afecta_ma ? 'true' : 'false';
-    document.getElementById('m-review-afecta-resultado').value = data.nc.afecta_resultado || '';
+    document.getElementById('m-review-afecta-resultado').value = data.nc.afecta_resultado ? 'true' : 'false';
     document.getElementById('m-review-descripcion').value = data.nc.descripcion || '';
     document.getElementById('m-review-accion-correctora').value = data.nc.accion_correctora || '';
     document.getElementById('m-review-causas').value = data.nc.causas || '';
     document.getElementById('m-review-accion-inmediata').value = data.nc.accion_inmediata || '';
+    document.getElementById('m-review-observaciones').value = data.nc.observaciones || '';
     document.getElementById('m-review-valoracion').value = data.nc.valoracion_euros || 0;
     document.getElementById('pending-editor').style.display = 'block';
     window.scrollTo(0, document.getElementById('pending-editor').offsetTop - 12);
@@ -868,11 +891,12 @@ async function savePendingReview() {
     programa_desc: v('m-review-programa-desc'),
     categoria,
     afecta_ma: document.getElementById('m-review-afecta-ma').value === 'true',
-    afecta_resultado: v('m-review-afecta-resultado'),
+    afecta_resultado: document.getElementById('m-review-afecta-resultado').value === 'true',
     descripcion,
     causas: v('m-review-causas'),
     accion_inmediata: v('m-review-accion-inmediata'),
     accion_correctora: accionCorrectora,
+    observaciones: v('m-review-observaciones'),
     valoracion_euros: v('m-review-valoracion') || 0,
     email_destino: v('m-review-email-destino'),
     notificar_creador: false
@@ -923,7 +947,7 @@ async function submitNC() {
     accion_inmediata:  v('m-accion-inmediata'),
     valoracion_euros:  parseFloat(v('m-valoracion')) || 0,
     afecta_ma:         document.getElementById('m-afecta-ma').checked,
-    afecta_resultado:  v('m-afecta-resultado'),
+    afecta_resultado:  document.getElementById('m-afecta-resultado').value === 'true',
   };
 
   // Validación
@@ -968,13 +992,14 @@ function resetForm() {
   if (document.getElementById('tab-form')) document.getElementById('tab-form').classList.add('active');
   if (document.getElementById('tab-pending')) document.getElementById('tab-pending').classList.remove('active');
   // Limpiar campos (excepto detectado_por)
-  ['m-proyecto','m-causas','m-accion-inmediata','m-descripcion','m-valoracion','m-afecta-resultado'].forEach(id => {
+  ['m-proyecto','m-causas','m-accion-inmediata','m-descripcion','m-valoracion'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
   ['m-proceso','m-departamento','m-area','m-programa'].forEach(id => {
     document.getElementById(id).selectedIndex = 0;
   });
+  document.getElementById('m-afecta-resultado').value = 'false';
   syncMobileReviewCategorias('', '');
   document.getElementById('m-afecta-ma').checked = false;
   document.getElementById('m-fecha').value = new Date().toISOString().split('T')[0];

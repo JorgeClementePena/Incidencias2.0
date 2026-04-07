@@ -455,6 +455,8 @@ tbody tr:hover td { background: var(--teal-50); }
 .badge-cat       { background: #eef6f4; color: var(--teal-800); border: 1px solid var(--teal-200); }
 .badge-admin     { background: var(--teal-100); color: var(--teal-800); }
 .badge-user      { background: #f3f4f6; color: #6b7280; }
+.badge-ok        { background: var(--teal-50); color: var(--teal-800); border: 1px solid var(--teal-200); }
+.badge-error     { background: #fde8e6; color: #b03a2e; border: 1px solid #f4b7b0; }
 
 /* ══════════════════════════════════════
    NC FORM
@@ -621,6 +623,81 @@ tbody tr:hover td { background: var(--teal-50); }
 }
 .search-bar input { max-width: 280px; padding: 8px 13px; font-size: 13px; }
 .search-bar select { max-width: 170px; padding: 8px 13px; font-size: 13px; }
+
+.import-card .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.import-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.import-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.import-help {
+  font-size: 12.5px;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+.import-summary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.import-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.import-kpi {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.import-kpi strong {
+  font-size: 24px;
+  color: var(--text);
+}
+
+.import-kpi span {
+  font-size: 12px;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.import-kpi.ok {
+  background: var(--teal-50);
+  border-color: var(--teal-200);
+}
+
+.import-kpi.bad {
+  background: #fff4f2;
+  border-color: #f4c5bf;
+}
+
+.import-note {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--text-mid);
+}
 
 .categorias-admin-grid {
   display: grid;

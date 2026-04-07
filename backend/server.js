@@ -124,11 +124,12 @@ async function ensureRuntimeSchema() {
       categoria VARCHAR(255) DEFAULT NULL,
       programa_desc VARCHAR(200) DEFAULT NULL,
       afecta_ma TINYINT(1) NOT NULL DEFAULT 0,
-      afecta_resultado VARCHAR(200) DEFAULT NULL,
+      afecta_resultado TINYINT(1) NOT NULL DEFAULT 0,
       descripcion TEXT NOT NULL,
       causas TEXT DEFAULT NULL,
       accion_inmediata TEXT DEFAULT NULL,
       accion_correctora TEXT DEFAULT NULL,
+      observaciones TEXT DEFAULT NULL,
       valoracion_euros DECIMAL(12,2) DEFAULT 0.00,
       estado ENUM('Abierta','Cerrada') NOT NULL DEFAULT 'Abierta',
       revisada TINYINT(1) NOT NULL DEFAULT 0,
@@ -217,6 +218,26 @@ async function ensureRuntimeSchema() {
   const categoriaType = String(categoriaColumn.rows[0]?.Type || '').toLowerCase();
   if (categoriaType.startsWith('enum(')) {
     await query('ALTER TABLE no_conformidades MODIFY categoria VARCHAR(255) DEFAULT NULL');
+  }
+
+  const afectaResultadoColumn = await query(`SHOW COLUMNS FROM no_conformidades LIKE 'afecta_resultado'`);
+  const afectaResultadoType = String(afectaResultadoColumn.rows[0]?.Type || '').toLowerCase();
+  if (!afectaResultadoType.includes('tinyint(1)')) {
+    await query(`
+      UPDATE no_conformidades
+      SET afecta_resultado = CASE
+        WHEN TRIM(COALESCE(afecta_resultado, '')) <> ''
+         AND LOWER(TRIM(COALESCE(afecta_resultado, ''))) NOT IN ('no', 'false', '0')
+        THEN '1'
+        ELSE '0'
+      END
+    `);
+    await query('ALTER TABLE no_conformidades MODIFY afecta_resultado TINYINT(1) NOT NULL DEFAULT 0');
+  }
+
+  const observacionesColumn = await query(`SHOW COLUMNS FROM no_conformidades LIKE 'observaciones'`);
+  if (!observacionesColumn.rows.length) {
+    await query('ALTER TABLE no_conformidades ADD COLUMN observaciones TEXT DEFAULT NULL AFTER accion_correctora');
   }
 
   for (const [from, to] of Object.entries(AREA_ALIASES)) {

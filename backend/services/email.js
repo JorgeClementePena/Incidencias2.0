@@ -74,12 +74,13 @@ function buildEmailHTML(nc) {
       <div class="field"><label>Programa</label><p>${nc.programa || '—'}</p></div>
       <div class="field"><label>Valoración €</label><p>${nc.valoracion_euros ? nc.valoracion_euros + ' €' : '—'}</p></div>
       <div class="field"><label>¿Afecta al MA?</label><p>${nc.afecta_ma ? 'Sí' : 'No'}</p></div>
-      <div class="field"><label>Afecta resultado</label><p>${nc.afecta_resultado || '—'}</p></div>
+      <div class="field"><label>Afecta resultado</label><p>${nc.afecta_resultado ? 'Sí' : 'No'}</p></div>
       <div class="field full"><label>Descripción</label><p>${nc.descripcion}</p></div>
     </div>
     ${nc.causas ? `<div class="section-title">Análisis</div><div class="field"><label>Causas</label><p>${nc.causas}</p></div>` : ''}
     ${nc.accion_inmediata ? `<div class="field" style="margin-top:10px"><label>Acción inmediata</label><p>${nc.accion_inmediata}</p></div>` : ''}
     ${nc.accion_correctora ? `<div class="field" style="margin-top:10px"><label>Acción correctora</label><p>${nc.accion_correctora}</p></div>` : ''}
+    ${nc.observaciones ? `<div class="field" style="margin-top:10px"><label>Observaciones</label><p>${nc.observaciones}</p></div>` : ''}
   </div>
   <div class="footer">
     Este mensaje ha sido generado automáticamente por Incidencias Fidamc.<br>

@@ -116,7 +116,7 @@ const ModalModule = (() => {
         ['Programa',        nc.programa || '—'],
         ['Detectado por',   nc.detectado_por],
         ['¿Afecta al MA?',  nc.afecta_ma ? 'Sí' : 'No'],
-        ['Afecta resultado',nc.afecta_resultado || '—'],
+        ['Afecta resultado',nc.afecta_resultado ? 'Sí' : 'No'],
         ['Categoría',       nc.categoria || '—'],
         ['Estado',          nc.estado],
         ['Valoración €',    nc.valoracion_euros ? parseFloat(nc.valoracion_euros).toLocaleString('es-ES',{minimumFractionDigits:2})+' €' : '—'],
@@ -125,6 +125,7 @@ const ModalModule = (() => {
         ['Causas',          nc.causas || '—', true],
         ['Acción Inmediata',nc.accion_inmediata || '—', true],
         ['Acción Correctora',nc.accion_correctora || '—', true],
+        ['Observaciones',   nc.observaciones || '—', true],
         ['Tiempo resolución', calcDiasLaborables(nc.created_at, nc.closed_at)],
       ];
 
@@ -207,13 +208,14 @@ const ModalModule = (() => {
     document.getElementById('edit-programa').value         = nc.programa || '';
     document.getElementById('edit-categoria').value        = nc.categoria || '';
     document.getElementById('edit-afecta-ma').value        = nc.afecta_ma ? 'true' : 'false';
-    document.getElementById('edit-afecta-resultado').value = nc.afecta_resultado || '';
+    document.getElementById('edit-afecta-resultado').value = nc.afecta_resultado ? 'true' : 'false';
     document.getElementById('edit-valoracion').value       = nc.valoracion_euros || 0;
     document.getElementById('edit-email-destino').value    = nc.email_destino || '';
     document.getElementById('edit-descripcion').value      = nc.descripcion || '';
     document.getElementById('edit-causas').value           = nc.causas || '';
     document.getElementById('edit-accion-inmediata').value = nc.accion_inmediata || '';
     document.getElementById('edit-accion-correctora').value= nc.accion_correctora || '';
+    document.getElementById('edit-observaciones').value    = nc.observaciones || '';
     document.getElementById('edit-error').style.display   = 'none';
     document.getElementById('modal-edit').classList.add('open');
   }
@@ -232,13 +234,14 @@ const ModalModule = (() => {
         programa:          document.getElementById('edit-programa').value,
         categoria:         document.getElementById('edit-categoria').value,
         afecta_ma:         document.getElementById('edit-afecta-ma').value === 'true',
-        afecta_resultado:  document.getElementById('edit-afecta-resultado').value.trim(),
+        afecta_resultado:  document.getElementById('edit-afecta-resultado').value === 'true',
         valoracion_euros:  document.getElementById('edit-valoracion').value,
         email_destino:     document.getElementById('edit-email-destino').value.trim(),
         descripcion:       document.getElementById('edit-descripcion').value.trim(),
         causas:            document.getElementById('edit-causas').value.trim(),
         accion_inmediata:  document.getElementById('edit-accion-inmediata').value.trim(),
         accion_correctora: document.getElementById('edit-accion-correctora').value.trim(),
+        observaciones:     document.getElementById('edit-observaciones').value.trim(),
         notificar_creador: notificar,
       });
       document.getElementById('modal-edit').classList.remove('open');

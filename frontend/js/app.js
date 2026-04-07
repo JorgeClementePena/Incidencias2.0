@@ -6,6 +6,7 @@ const App = (() => {
   const form        = FormModule;
   const dashboard   = DashboardModule;
   const incidencias = IncidenciasModule;
+  const importacion = ImportacionModule;
   const usuarios    = UsuariosModule;
   const catalogos   = CatalogosModule;
   const modal       = ModalModule;
@@ -28,6 +29,7 @@ const App = (() => {
     'usuarios':   { el: 'page-usuarios',    onEnter: () => usuarios.load(),                               adminOnly: true },
     'pendientes': { el: 'page-pendientes', onEnter: () => PendientesModule.load(), adminOnly: true },
     'categorias': { el: 'page-categorias',  onEnter: () => catalogos.renderAdminPage(), adminOnly: true },
+    'importacion': { el: 'page-importacion', onEnter: () => importacion.init(), adminOnly: true },
   };
 
   function navigate(name) {
@@ -62,5 +64,5 @@ const App = (() => {
 
   window.addEventListener('DOMContentLoaded', init);
 
-  return { auth, form, dashboard, incidencias, usuarios, catalogos, modal, navigate, toast, showToast: toast };
+  return { auth, form, dashboard, incidencias, importacion, usuarios, catalogos, modal, navigate, toast, showToast: toast };
 })();

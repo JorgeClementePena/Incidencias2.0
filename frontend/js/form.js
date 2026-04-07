@@ -29,6 +29,7 @@ const FormModule = (() => {
     document.getElementById('nc-area').value = '';
     document.getElementById('nc-departamento').value = '';
     document.getElementById('nc-afecta-ma').value = 'false';
+    document.getElementById('nc-afecta-resultado').value = 'false';
     document.getElementById('nc-fecha').value = new Date().toISOString().split('T')[0];
 
     const user = AuthModule.currentUser();
@@ -64,7 +65,7 @@ const FormModule = (() => {
         area: document.getElementById('nc-area').value || null,
         programa: document.getElementById('nc-programa').value || null,
         afecta_ma: document.getElementById('nc-afecta-ma').value === 'true',
-        afecta_resultado: document.getElementById('nc-afecta-resultado').value.trim() || null,
+        afecta_resultado: document.getElementById('nc-afecta-resultado').value === 'true',
         descripcion,
         causas: document.getElementById('nc-causas').value.trim() || null,
         accion_inmediata: document.getElementById('nc-accion-inmediata').value.trim() || null,

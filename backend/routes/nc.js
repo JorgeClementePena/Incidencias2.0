@@ -2,12 +2,90 @@
 
 const express  = require('express');
 const crypto = require('crypto');
+const multer = require('multer');
 const { query, getClient } = require('../db/db');
 const { requireAuth, requireAdmin } = require('../middleware/auth');
 const { sendNCEmail, sendEditNotification } = require('../services/email');
+const {
+  parseWorkbook,
+  parseHeaders,
+  buildRawRow,
+  normalizeImportRow,
+  validateImportHeaders,
+} = require('../services/ncImport');
 
 const router = express.Router();
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 router.use(requireAuth);
+
+function toBoolFlag(value) {
+  if (value === true || value === 1 || value === '1' || value === 'true') return 1;
+  return 0;
+}
+
+async function buildCategoriasPorArea() {
+  const result = await query(
+    `SELECT area, nombre
+     FROM area_categorias
+     WHERE activa = 1
+     ORDER BY area ASC, orden ASC, nombre ASC`
+  );
+
+  return result.rows.reduce((acc, row) => {
+    if (!acc[row.area]) acc[row.area] = [];
+    acc[row.area].push(row.nombre);
+    return acc;
+  }, {});
+}
+
+async function createNcRecord(client, payload) {
+  const tempId = `TMP-${crypto.randomUUID().slice(0, 12)}`;
+
+  await client.query(
+    `INSERT INTO no_conformidades (
+      id, codigo_proyecto, proceso, fecha_deteccion, detectado_por,
+      departamento, area, programa, categoria, programa_desc,
+      afecta_ma, afecta_resultado, descripcion,
+      causas, accion_inmediata, accion_correctora, observaciones,
+      valoracion_euros, email_destino, email_cc, creado_por, email_remitente, revisada
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+    [
+      tempId,
+      payload.codigo_proyecto,
+      payload.proceso,
+      payload.fecha_deteccion,
+      payload.detectado_por,
+      payload.departamento,
+      payload.area || null,
+      payload.programa || null,
+      payload.categoria || null,
+      payload.programa_desc || null,
+      toBoolFlag(payload.afecta_ma),
+      toBoolFlag(payload.afecta_resultado),
+      payload.descripcion,
+      payload.causas || null,
+      payload.accion_inmediata || null,
+      payload.accion_correctora || null,
+      payload.observaciones || null,
+      parseFloat(payload.valoracion_euros) || 0,
+      payload.email_destino || null,
+      payload.email_cc || null,
+      payload.creado_por || null,
+      payload.email_remitente || null,
+      payload.revisada ? 1 : 0,
+    ]
+  );
+
+  const insertRes = await client.query('SELECT seq FROM no_conformidades WHERE id = ?', [tempId]);
+  const nextSeq = insertRes.rows[0]?.seq;
+  const ncId = 'NC-' + String(nextSeq).padStart(4, '0');
+
+  await client.query('UPDATE no_conformidades SET id = ? WHERE id = ?', [ncId, tempId]);
+  return ncId;
+}
 
 async function categoriaValida(area, categoria) {
   if (!categoria) return true;
@@ -72,6 +150,137 @@ router.get('/', async (req, res) => {
   } catch (err) {
     console.error('[NC] List error:', err.message);
     res.status(500).json({ error: 'Error al obtener incidencias.' });
+  }
+});
+
+router.post('/import/preview', requireAdmin, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file?.buffer) {
+      return res.status(400).json({ error: 'Selecciona un archivo Excel antes de continuar.' });
+    }
+
+    const rows = parseWorkbook(req.file.buffer);
+    const headerMap = parseHeaders(rows[0] || []);
+    const missingHeaders = validateImportHeaders(headerMap);
+
+    if (missingHeaders.length) {
+      return res.status(400).json({
+        error: `Faltan columnas obligatorias: ${missingHeaders.join(', ')}`,
+      });
+    }
+
+    const categoriasPorArea = await buildCategoriasPorArea();
+    const dataRows = rows.slice(1).filter(row => row.some(cell => String(cell ?? '').trim() !== ''));
+    const preview = dataRows.map((row, index) => {
+      const raw = buildRawRow(headerMap, row);
+      const normalized = normalizeImportRow(raw, categoriasPorArea);
+      return {
+        rowNumber: index + 2,
+        raw,
+        values: normalized.values,
+        errors: normalized.errors,
+      };
+    });
+
+    const validRows = preview.filter(row => !row.errors.length).length;
+    const invalidRows = preview.length - validRows;
+
+    res.json({
+      summary: {
+        totalRows: preview.length,
+        validRows,
+        invalidRows,
+      },
+      rows: preview,
+      defaults: {
+        proceso: 'Importacion Excel',
+        detectado_por: 'Importacion Excel',
+      },
+    });
+  } catch (err) {
+    console.error('[NC] Import preview error:', err.message);
+    res.status(500).json({ error: 'No se pudo leer el archivo Excel.' });
+  }
+});
+
+router.post('/import/commit', requireAdmin, async (req, res) => {
+  const client = await getClient();
+  try {
+    const rows = Array.isArray(req.body?.rows) ? req.body.rows : [];
+    if (!rows.length) {
+      await client.rollback();
+      client.release();
+      return res.status(400).json({ error: 'No hay filas para importar.' });
+    }
+
+    const categoriasPorArea = await buildCategoriasPorArea();
+    const preparedRows = rows.map((row, index) => {
+      const raw = row?.raw || row;
+      const normalized = normalizeImportRow(raw, categoriasPorArea);
+      return {
+        rowNumber: row?.rowNumber || index + 2,
+        raw,
+        values: normalized.values,
+        errors: normalized.errors,
+      };
+    });
+
+    const invalidRows = preparedRows.filter(row => row.errors.length);
+    if (invalidRows.length) {
+      await client.rollback();
+      client.release();
+      return res.status(400).json({
+        error: 'Hay filas invalidas en la importacion.',
+        rows: invalidRows,
+      });
+    }
+
+    const createdIds = [];
+
+    for (const row of preparedRows) {
+      if (!(await categoriaValida(row.values.area, row.values.categoria))) {
+        const error = new Error(`La categoria de la fila ${row.rowNumber} ya no es valida para el area seleccionado.`);
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const { responsables, admins } = await getResponsables(row.values.area, row.values.departamento, row.values.programa);
+      const destinatarios = responsables.map(item => item.email);
+      const adminEmails = admins.map(item => item.email);
+      const emailDestino = destinatarios.length ? destinatarios.join(',') : adminEmails.join(',');
+      const emailCC = destinatarios.length ? adminEmails.join(',') : null;
+
+      const ncId = await createNcRecord(client, {
+        ...row.values,
+        programa_desc: null,
+        email_destino: emailDestino || null,
+        email_cc: emailCC || null,
+        creado_por: req.user.id,
+        email_remitente: req.user.email,
+        revisada: true,
+      });
+
+      createdIds.push(ncId);
+
+      await client.query(
+        'INSERT INTO email_log (nc_id, destinatario, cc, asunto, enviado) VALUES (?,?,?,?,1)',
+        [ncId, emailDestino || '', emailCC || null, `[NC] ${ncId} - ${row.values.codigo_proyecto}`]
+      );
+    }
+
+    await client.commit();
+    client.release();
+
+    res.status(201).json({
+      success: true,
+      imported: createdIds.length,
+      ids: createdIds,
+    });
+  } catch (err) {
+    await client.rollback();
+    client.release();
+    console.error('[NC] Import commit error:', err.message);
+    res.status(err.statusCode || 500).json({ error: err.message || 'No se pudo completar la importacion.' });
   }
 });
 
@@ -140,7 +349,7 @@ router.post('/', async (req, res) => {
       codigo_proyecto, proceso, fecha_deteccion, detectado_por,
       departamento, area, programa, programa_desc,
       afecta_ma, afecta_resultado, descripcion,
-      causas, accion_inmediata, valoracion_euros, email_cc
+      causas, accion_inmediata, valoracion_euros, email_cc, observaciones
     } = req.body;
 
     if (!codigo_proyecto || !proceso || !fecha_deteccion || !detectado_por ||
@@ -156,32 +365,30 @@ router.post('/', async (req, res) => {
     const emailDestino  = destinatarios.length ? destinatarios.join(',') : adminEmails.join(',');
     const emailCC       = destinatarios.length ? adminEmails.join(',') : null;
 
-    const tempId = `TMP-${crypto.randomUUID().slice(0, 12)}`;
-
-    await client.query(
-        `INSERT INTO no_conformidades (
-          id, codigo_proyecto, proceso, fecha_deteccion, detectado_por,
-          departamento, area, programa, programa_desc,
-          afecta_ma, afecta_resultado, descripcion,
-          causas, accion_inmediata,
-          valoracion_euros, email_destino, email_cc, creado_por, email_remitente, revisada
-        ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
-        [
-          tempId, codigo_proyecto, proceso, fecha_deteccion, detectado_por,
-          departamento, area||null, programa||null, programa_desc||null,
-          (afecta_ma === true || afecta_ma === 'true') ? 1 : 0,
-          afecta_resultado||null, descripcion,
-          causas||null, accion_inmediata||null,
-          parseFloat(valoracion_euros)||0,
-          emailDestino, emailCC||email_cc||null, req.user.id, req.user.email, 0
-        ]
-    );
-
-    const insertRes = await client.query('SELECT seq FROM no_conformidades WHERE id = ?', [tempId]);
-    const nextSeq = insertRes.rows[0]?.seq;
-    const ncId = 'NC-' + String(nextSeq).padStart(4, '0');
-
-    await client.query('UPDATE no_conformidades SET id = ? WHERE id = ?', [ncId, tempId]);
+    const ncId = await createNcRecord(client, {
+      codigo_proyecto,
+      proceso,
+      fecha_deteccion,
+      detectado_por,
+      departamento,
+      area: area || null,
+      programa: programa || null,
+      categoria: null,
+      programa_desc: programa_desc || null,
+      afecta_ma,
+      afecta_resultado,
+      descripcion,
+      causas: causas || null,
+      accion_inmediata: accion_inmediata || null,
+      accion_correctora: null,
+      observaciones: observaciones || null,
+      valoracion_euros,
+      email_destino: emailDestino,
+      email_cc: emailCC || email_cc || null,
+      creado_por: req.user.id,
+      email_remitente: req.user.email,
+      revisada: false,
+    });
 
     await client.query(
         'INSERT INTO email_log (nc_id, destinatario, cc, asunto) VALUES (?,?,?,?)',
@@ -266,7 +473,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
       departamento, area, programa, categoria, programa_desc,
       afecta_ma, afecta_resultado, descripcion,
       causas, accion_inmediata, accion_correctora,
-      valoracion_euros, email_destino, notificar_creador
+      valoracion_euros, email_destino, notificar_creador, observaciones
     } = req.body;
 
     if (!codigo_proyecto || !proceso || !fecha_deteccion || !detectado_por ||
@@ -292,15 +499,15 @@ router.put('/:id', requireAdmin, async (req, res) => {
         codigo_proyecto=?, proceso=?, fecha_deteccion=?, detectado_por=?,
         departamento=?, area=?, programa=?, categoria=?, programa_desc=?,
         afecta_ma=?, afecta_resultado=?, descripcion=?,
-        causas=?, accion_inmediata=?, accion_correctora=?,
+        causas=?, accion_inmediata=?, accion_correctora=?, observaciones=?,
         valoracion_euros=?, email_destino=?, revisada=?
        WHERE id=?`,
         [
           codigo_proyecto, proceso, fecha_deteccion, detectado_por,
           departamento, area||null, programa||null, categoria||null, programa_desc||null,
-          (afecta_ma === true || afecta_ma === 'true') ? 1 : 0,
-          afecta_resultado||null, descripcion,
-          causas||null, accion_inmediata||null, accion_correctora||null,
+          toBoolFlag(afecta_ma),
+          toBoolFlag(afecta_resultado), descripcion,
+          causas||null, accion_inmediata||null, accion_correctora||null, observaciones||null,
           parseFloat(valoracion_euros)||0,
           email_destino||null,
           revisada,
