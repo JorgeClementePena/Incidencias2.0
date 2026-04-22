@@ -169,11 +169,11 @@
               <div class="nc-row" style="grid-template-columns: 2fr 1fr 1fr 2fr">
                 <div class="nc-cell">
                   <label>Código Proyecto <span class="req">*</span></label>
-                  <input type="text" id="nc-proyecto" placeholder="Ej: PROJ-2024-001">
+                  <input type="text" id="nc-proyecto" placeholder="Ej: 2026/01">
                 </div>
                 <div class="nc-cell">
                   <label>Proceso / PE <span class="req">*</span></label>
-                  <input type="text" id="nc-proceso" placeholder="PE-03">
+                  <input type="text" id="nc-proceso" placeholder="...">
                 </div>
                 <div class="nc-cell">
                   <label>Fecha detección <span class="req">*</span></label>
@@ -302,6 +302,15 @@
             </select>
           </div>
           <div class="filter-group">
+            <label>Prioridad</label>
+            <select id="f-prioridad" onchange="App.dashboard.load()">
+              <option value="">Todas las prioridades</option>
+              <option value="Nivel 1">Nivel 1</option>
+              <option value="Nivel 2">Nivel 2</option>
+              <option value="Nivel 3">Nivel 3</option>
+            </select>
+          </div>
+          <div class="filter-group">
             <label>Año</label>
             <select id="f-anio" onchange="App.dashboard.load()">
               <option value="">Todos los años</option>
@@ -401,12 +410,24 @@
             <option value="">Todos los estados</option>
             <option>Abierta</option><option>Cerrada</option>
           </select>
+          <select id="s-dept" onchange="App.incidencias.load()">
+            <option value="">Todos los departamentos</option>
+          </select>
           <select id="s-area" onchange="App.incidencias.load()">
             <option value="">Todas las áreas</option>
           </select>
           <select id="s-cat" onchange="App.incidencias.load()">
             <option value="">Todas las categorías</option>
           </select>
+          <select id="s-prioridad" onchange="App.incidencias.load()">
+            <option value="">Todas las prioridades</option>
+            <option value="Nivel 1">Nivel 1</option>
+            <option value="Nivel 2">Nivel 2</option>
+            <option value="Nivel 3">Nivel 3</option>
+          </select>
+          <button class="btn btn-ghost btn-sm" id="btn-export-csv" type="button" onclick="App.incidencias.exportCsv()" style="display:none">
+            Exportar CSV
+          </button>
         </div>
         <div class="card">
           <div class="table-wrap" id="incidencias-table"></div>
@@ -587,6 +608,15 @@
             <label class="field-label">Categoría</label>
             <select class="field-input" id="edit-categoria">
               <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Prioridad</label>
+            <select class="field-input" id="edit-prioridad">
+              <option value="">— Sin prioridad —</option>
+              <option value="Nivel 1">Nivel 1</option>
+              <option value="Nivel 2">Nivel 2</option>
+              <option value="Nivel 3">Nivel 3</option>
             </select>
           </div>
           <div class="field-group">

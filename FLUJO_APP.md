@@ -1,160 +1,219 @@
 # Flujo de la App
 
-Este documento resume cómo funciona la aplicación de incidencias a nivel de usuario y de administración.
+Este documento resume como funciona la aplicacion de incidencias a nivel de uso, administracion y operaciones habituales.
 
-## 1. Acceso a la aplicación
+## 1. Acceso a la aplicacion
 
 La app tiene dos entradas:
 
-- Escritorio: `index.html`
-- Móvil: `mobile.html`
+- Escritorio: `frontend/index.html`
+- Movil: `frontend/mobile.html`
 
-Ambas usan la misma API backend y el mismo modelo de datos.
+Ambas usan la misma API backend y el mismo modelo de datos, pero no exactamente la misma interfaz.
 
-## 2. Registro y login
+Comportamiento general:
+
+- En escritorio existe flujo de login y registro.
+- En movil existe login y uso de la app, pero no el flujo completo de registro.
+- El backend detecta user-agent movil y puede redirigir a `/mobile`.
+
+## 2. Registro y autenticacion
 
 ### Registro
 
-Un usuario nuevo puede registrarse desde la pantalla de acceso.
+El registro se hace desde la interfaz de escritorio.
 
 Datos principales:
 
-- Nombre
-- Correo corporativo
-- Departamento
-- Contraseña
+- nombre
+- correo corporativo
+- departamento
+- contrasena
 
-Condiciones:
+Reglas:
 
-- Solo se admiten correos `@fidamc.es`
-- La cuenta no se activa directamente
+- solo se admiten correos `@fidamc.es`
+- la contrasena debe tener al menos 6 caracteres
+- el alta no se completa al instante
 
 Proceso:
 
 1. El usuario introduce sus datos.
-2. El backend genera un código temporal de verificación.
-3. Se envía ese código por email.
-4. El usuario introduce el código recibido.
-5. Si el código es correcto, se crea la cuenta y se inicia sesión.
+2. El backend crea un registro temporal en `pending_registrations`.
+3. Se genera un codigo de 6 digitos con caducidad de 15 minutos.
+4. Se envia ese codigo por email.
+5. El usuario introduce el codigo.
+6. Si el codigo es correcto, el backend crea el usuario real en `users`.
+7. Se devuelve un JWT y el usuario entra directamente en la aplicacion.
 
 ### Login
 
-El usuario accede con:
+El login existe en escritorio y en movil.
 
-- Email
-- Contraseña
+Proceso:
 
-Si las credenciales son válidas, la app guarda un token JWT y carga la interfaz principal.
+1. El usuario introduce email y contrasena.
+2. El backend valida credenciales.
+3. Si la cuenta esta activa, devuelve un JWT.
+4. El frontend guarda el token en `localStorage`.
+5. La app carga la interfaz principal segun el rol del usuario.
 
-## 3. Flujo principal de usuario
+## 3. Roles y permisos
 
-El flujo estándar de un usuario normal es:
+Hay dos roles:
 
-1. Iniciar sesión
+- `user`
+- `admin`
+
+### Usuario normal
+
+Puede:
+
+- iniciar sesion
+- crear incidencias
+- consultar el flujo normal que le corresponda en la interfaz
+
+No puede:
+
+- revisar pendientes
+- editar incidencias como administrador
+- gestionar usuarios
+- gestionar categorias
+- importar Excel
+
+### Administrador
+
+Puede ademas:
+
+- revisar incidencias pendientes
+- editar incidencias
+- cambiar estado abierta/cerrada
+- gestionar usuarios
+- gestionar responsabilidades
+- gestionar categorias por area
+- importar incidencias desde Excel
+- notificar al creador tras la revision
+
+## 4. Flujo principal de usuario
+
+El flujo estandar de un usuario normal es:
+
+1. Iniciar sesion
 2. Ir a `Nueva Incidencia`
 3. Rellenar el formulario
 4. Enviar la incidencia
 
 ### Campos que rellena el usuario
 
-Bloque de identificación:
+Bloque de identificacion:
 
-- Código de proyecto
-- Proceso
-- Fecha de detección
-- Quién detecta
-- Departamento
-- Área
-- Programa
+- codigo de proyecto
+- proceso
+- fecha de deteccion
+- detectado por
+- departamento
+- area
+- programa
 
-Bloque de descripción:
+Bloque de descripcion:
 
-- Descripción de la incidencia
-- Causas
-- Acción inmediata
+- descripcion de la incidencia
+- causas
+- accion inmediata
 
 Bloque de impacto:
 
-- Valoración económica
-- Afecta al MA
-- Afecta resultado
+- valoracion economica
+- afecta al MA
+- afecta al resultado
+- observaciones en algunos flujos de edicion, no en el alta basica de escritorio
 
-### Qué ocurre al enviarla
+### Que ocurre al enviarla
 
-Cuando el usuario envía la incidencia:
+Cuando el usuario envia la incidencia:
 
 1. El backend valida los campos obligatorios.
-2. Se genera un identificador interno tipo `NC-0001`.
-3. Se guarda en base de datos con estado inicial:
-   - `Abierta`
-   - `revisada = 0`
-4. Se buscan responsables por:
-   - área
-   - departamento
-   - programa
-5. Se envía notificación por email a responsables o, si no hay responsables, a administradores.
+2. Calcula responsables segun area, departamento y programa.
+3. Crea la incidencia en base de datos.
+4. Genera un identificador visible tipo `NC-0001`.
+5. Guarda el log de correo en `email_log`.
+6. Intenta enviar notificacion por email.
+
+Estado inicial de la incidencia:
+
+- `estado = 'Abierta'`
+- `revisada = 0`
 
 Importante:
 
-- En este punto la incidencia todavía no está revisada.
-- La categoría no la pone el usuario.
+- la categoria no la pone el usuario en el alta normal
+- la incidencia todavia no entra en el circuito final de analitica
 
-## 4. Flujo de revisión del administrador
+## 5. Flujo de revision del administrador
 
-Las incidencias nuevas pasan al circuito de revisión.
+Las incidencias nuevas pasan al circuito de revision.
 
 ### Pantalla de pendientes
 
-Los administradores ven una sección `Pendientes`.
+Los administradores ven una seccion `Pendientes`.
 
-Ahí aparecen las incidencias con:
+Ahi aparecen las incidencias con:
 
 - `revisada = 0`
 
 El admin abre una incidencia pendiente y completa o corrige sus datos.
 
-### Qué hace el admin en la revisión
+### Que puede editar el admin
 
-Puede editar:
+En la revision o edicion puede trabajar con:
 
-- Proyecto
-- Proceso
-- Fecha
-- Detectado por
-- Departamento
-- Área
-- Programa
-- Categoría
-- Causas
-- Acción inmediata
-- Acción correctora
-- Valoración
-- Email destino
+- proyecto
+- proceso
+- fecha
+- detectado por
+- departamento
+- area
+- programa
+- descripcion de programa
+- categoria
+- afecta al MA
+- afecta al resultado
+- descripcion
+- causas
+- accion inmediata
+- accion correctora
+- observaciones
+- valoracion
+- email destino
 
-### Regla de categoría
+### Regla de categoria
 
-La categoría:
+La categoria:
 
 - no es libre
-- depende del área seleccionada
-- se carga desde el catálogo de categorías por área
+- depende del area seleccionada
+- se carga desde el catalogo de categorias por area
 
-Si el admin intenta guardar una categoría que no pertenece a ese área, el backend la rechaza.
+Si el admin intenta guardar una categoria que no pertenece a ese area, el backend la rechaza.
 
-### Resultado de la revisión
+### Resultado de la revision
 
 Cuando el admin guarda:
 
 1. La incidencia se actualiza.
-2. Si tiene categoría, queda marcada como:
-   - `revisada = 1`
-3. Ya pasa a formar parte del circuito normal de consulta.
+2. Si tiene categoria, queda marcada como `revisada = 1`.
+3. Pasa a formar parte del circuito normal de consulta y dashboard.
 
 Opcionalmente:
 
 - el admin puede guardar y notificar al creador
 
-## 5. Gestión de incidencias ya revisadas
+En movil admin existen dos acciones diferenciadas:
+
+- guardar revision
+- guardar y notificar
+
+## 6. Gestion de incidencias revisadas
 
 Una vez revisada, la incidencia aparece en:
 
@@ -162,12 +221,13 @@ Una vez revisada, la incidencia aparece en:
 - dashboard
 - modal de detalle
 
-El admin puede además:
+El admin puede:
 
-- cambiar estado
-- editar de nuevo la incidencia
+- volver a editarla
+- cambiar su estado
+- eliminarla
 
-Estados disponibles:
+Estados disponibles actualmente:
 
 - `Abierta`
 - `Cerrada`
@@ -175,127 +235,198 @@ Estados disponibles:
 Cuando se cierra:
 
 - se guarda `closed_at`
+- se registra una traza en `nc_historial`
 
-## 6. Catálogos de la aplicación
+## 7. Importacion de incidencias desde Excel
 
-La app usa catálogos para varios campos:
+La aplicacion incluye una pantalla especifica de importacion para administradores.
 
-- Áreas
-- Departamentos
-- Programas
-- Categorías por área
+### Objetivo
 
-### Categorías por área
+Permite cargar incidencias historicas desde un Excel y validarlas antes de insertarlas.
 
-Las categorías ya no están fijas en código como antes.
+### Flujo de importacion
+
+1. El admin entra en `Importar Excel`.
+2. Selecciona un archivo `.xlsx`, `.xls` o `.csv`.
+3. La app envia el archivo al endpoint de preview.
+4. El backend lee la primera hoja, detecta cabeceras y valida filas.
+5. El frontend muestra:
+   - filas leidas
+   - filas validas
+   - filas con errores
+6. El admin confirma la importacion.
+7. El frontend envia solo las filas validas.
+8. El backend vuelve a validarlas y las inserta en transaccion.
+
+### Reglas relevantes
+
+- la importacion no exporta Excel; solo importa
+- hay doble validacion: preview y commit
+- `afecta_ma` y `afecta_resultado` se tratan como booleanos
+- la categoria debe pertenecer al area
+- las incidencias importadas quedan con `revisada = 1`
+- por defecto se usa `Importacion Excel` como proceso y detectado por si esos datos no vienen en el fichero
+
+## 8. Catalogos de la aplicacion
+
+La app usa catalogos para varios campos:
+
+- areas
+- departamentos
+- programas
+- categorias por area
+
+### Categorias por area
+
+Las categorias ya no estan fijas en codigo como unico origen funcional.
 
 Ahora:
 
 - se guardan en la tabla `area_categorias`
-- el admin puede gestionarlas desde la pantalla `Categorías`
+- el admin puede gestionarlas desde la pantalla `Categorias`
 
 Acciones permitidas:
 
-- añadir categoría
-- editar categoría
-- eliminar categoría
+- anadir categoria
+- editar categoria
+- eliminar o desactivar categoria segun implementacion actual
 
 Impacto:
 
-- escritorio y móvil usan el mismo catálogo
-- la revisión admin siempre ofrece categorías válidas para el área elegida
+- escritorio y movil consumen el mismo catalogo
+- la revision admin solo debe ofrecer categorias validas para el area elegida
+- la importacion Excel valida contra estas categorias
 
-## 7. Gestión de usuarios y responsabilidades
+### Areas, departamentos y programas
+
+Estos catalogos tienen soporte en backend y frontend y ademas usan aliases para normalizar datos historicos o importados.
+
+Esto es importante porque:
+
+- la app corrige nombres antiguos
+- la importacion Excel admite variantes de escritura
+
+## 9. Gestion de usuarios y responsabilidades
 
 El administrador puede gestionar:
 
 - usuarios
-- activación/desactivación
-- rol admin/user
+- activacion y desactivacion
+- rol admin o user
 - responsabilidades
+
+Tambien existen restricciones de seguridad:
+
+- un admin no puede quitarse su propio rol
+- un admin no puede desactivarse a si mismo
+- no se puede dejar la app sin administradores activos
 
 ### Responsabilidades
 
-Se usan para decidir quién recibe notificaciones.
+Las responsabilidades se usan para decidir quien recibe notificaciones.
 
 Cada usuario puede tener responsabilidades por:
 
-- área
+- area
 - departamento
 - programa
 
 Cuando se crea una incidencia, el sistema busca responsables que coincidan con esos valores.
 
-## 8. Dashboard y consultas
+Si no hay responsables especificos:
+
+- se recurre a los administradores activos
+
+## 10. Dashboard y consultas
 
 Las incidencias revisadas alimentan:
 
 - KPIs
-- gráficas
+- graficas
 - filtros
 - listados
 
-Filtros disponibles:
+### Regla base
 
-- área
+El dashboard trabaja con incidencias revisadas:
+
+- `revisada = 1`
+
+### Filtros
+
+En backend existen filtros por:
+
+- area
 - departamento
 - programa
-- año
+- ano
 - mes
-- categoría
+
+En el listado principal de incidencias se usan habitualmente:
+
+- busqueda por texto
 - estado
-- búsqueda por texto
+- departamento
+- area
+- categoria
 
-## 9. Flujo móvil
+## 11. Flujo movil
 
-La versión móvil permite:
+La version movil permite:
 
 - login
-- creación de incidencias
-- revisión de pendientes si el usuario es admin
+- creacion de incidencias
+- revision de pendientes si el usuario es admin
 
-Comparte la misma lógica que escritorio:
+Comparte la misma API que escritorio:
 
 - mismos endpoints
-- mismos catálogos
-- mismas categorías por área
+- mismo modelo de datos
+- mismo catalogo de categorias por area
 
-## 10. Emails
+Diferencias relevantes:
 
-La app puede enviar tres tipos principales de emails:
+- no replica exactamente toda la UX de escritorio
+- tiene logica JS embebida dentro de `mobile.html`
+- el admin puede revisar pendientes directamente desde pestañas moviles
 
-- verificación de registro
+## 12. Emails
+
+La app puede enviar varios tipos de email:
+
+- verificacion de registro
 - nueva incidencia
-- notificación al creador tras revisión
+- notificacion al creador tras revision o edicion
 
-Si SMTP no está configurado:
+Si SMTP no esta configurado correctamente:
 
-- la app no bloquea el flujo
-- simula el envío en consola
+- el flujo funcional no deberia bloquearse
+- el backend registra el intento y puede degradar el comportamiento a log en consola
 
-## 11. Datos de prueba
+## 13. Datos de prueba
 
-La aplicación dispone de un script de seed:
+La aplicacion dispone de un script de seed:
 
 - `backend/db/seed.js`
 
-Ese script genera incidencias de prueba coherentes con:
+Ese script genera datos de prueba coherentes con:
 
-- áreas actuales
-- categorías válidas por área
+- areas actuales
+- categorias validas por area
 - estados
 - valoraciones
 - textos de ejemplo
 
-## 12. Resumen del flujo general
+## 14. Resumen del flujo general
 
 Flujo corto:
 
-1. Usuario se registra o inicia sesión
-2. Usuario crea incidencia
-3. La incidencia queda abierta y pendiente de revisión
-4. El admin revisa y asigna categoría según el área
-5. La incidencia pasa a revisada
-6. Ya aparece en dashboard, consultas y estadísticas
-7. El admin puede cerrarla o volver a editarla
-
+1. Usuario se registra o inicia sesion.
+2. Usuario crea una incidencia.
+3. La incidencia queda abierta y pendiente de revision.
+4. El admin revisa y asigna categoria segun el area.
+5. La incidencia pasa a revisada.
+6. Ya aparece en dashboard, consultas y estadisticas.
+7. El admin puede cerrarla, editarla de nuevo o eliminarla.
+8. De forma separada, un admin tambien puede importar incidencias historicas desde Excel.

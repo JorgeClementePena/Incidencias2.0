@@ -9,7 +9,6 @@ const CatalogosModule = (() => {
       'Prototipos',
       'Termoplásticos',
       'Termoestables',
-      'Nuevas tecnologías',
     ],
     programas: [
       'Laboratorio y Calidad',
@@ -112,6 +111,7 @@ const CatalogosModule = (() => {
     fillSelect('nc-departamento', departamentos, '— Seleccionar —', document.getElementById('nc-departamento')?.value || '');
     fillSelect('edit-departamento', departamentos, '— Seleccionar —', document.getElementById('edit-departamento')?.value || '');
     fillSelect('f-dept', departamentos, 'Todos los depts.', document.getElementById('f-dept')?.value || '');
+    fillSelect('s-dept', departamentos, 'Todos los departamentos', document.getElementById('s-dept')?.value || '');
 
     fillSelect('nc-programa', programas, '— Seleccionar —', document.getElementById('nc-programa')?.value || '');
     fillSelect('edit-programa', programas, '— Seleccionar —', document.getElementById('edit-programa')?.value || '');

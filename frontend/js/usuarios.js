@@ -1,7 +1,7 @@
 const UsuariosModule = (() => {
 
   const AREAS = ['Producción', 'NDT', 'Laboratorio', 'Ingeniería', 'G-CAD'];
-  const DEPARTAMENTOS = ['Laboratorio y NDT', 'Nextgen factory', 'Producción', 'Prototipos', 'Termoplásticos', 'Termoestables', 'Nuevas tecnologías'];
+  const DEPARTAMENTOS = ['Ingeniería', 'Laboratorio y NDT', 'Nextgen factory', 'Producción', 'Prototipos', 'Termoplásticos', 'Termoestables'];
   const PROGRAMAS = ['Laboratorio y Calidad', 'Programa aeronáuticos', 'Programa Airbus comercial', 'Programa no aeronáuticos', 'Programa finanzas'];
 
   function formatDate(d) {

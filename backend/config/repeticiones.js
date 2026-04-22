@@ -1,0 +1,9 @@
+const REPEAT_WINDOW_DAYS = parseInt(process.env.REPEAT_WINDOW_DAYS || '30', 10);
+const REPEAT_ALERT_THRESHOLD = parseInt(process.env.REPEAT_ALERT_THRESHOLD || '3', 10);
+const REPEAT_CANDIDATE_LIMIT = parseInt(process.env.REPEAT_CANDIDATE_LIMIT || '25', 10);
+
+module.exports = {
+  REPEAT_WINDOW_DAYS,
+  REPEAT_ALERT_THRESHOLD,
+  REPEAT_CANDIDATE_LIMIT,
+};

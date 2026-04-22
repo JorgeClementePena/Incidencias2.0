@@ -55,6 +55,9 @@ CREATE TABLE IF NOT EXISTS no_conformidades (
     area                VARCHAR(50)     DEFAULT NULL,
     programa            VARCHAR(150)    DEFAULT NULL,
     categoria           VARCHAR(255)    DEFAULT NULL,
+    prioridad           VARCHAR(20)     DEFAULT NULL,
+    importada_excel     TINYINT(1)      NOT NULL DEFAULT 0,
+    repetida_automatica TINYINT(1)      NOT NULL DEFAULT 0,
     programa_desc       VARCHAR(200)    DEFAULT NULL,
     afecta_ma           TINYINT(1)      NOT NULL DEFAULT 0,
     afecta_resultado    TINYINT(1)      NOT NULL DEFAULT 0,
@@ -84,6 +87,9 @@ CREATE INDEX idx_nc_area      ON no_conformidades(area);
 CREATE INDEX idx_nc_dept      ON no_conformidades(departamento);
 CREATE INDEX idx_nc_programa  ON no_conformidades(programa);
 CREATE INDEX idx_nc_categoria ON no_conformidades(categoria);
+CREATE INDEX idx_nc_prioridad ON no_conformidades(prioridad);
+CREATE INDEX idx_nc_importada ON no_conformidades(importada_excel);
+CREATE INDEX idx_nc_rep_auto  ON no_conformidades(repetida_automatica);
 CREATE INDEX idx_nc_created   ON no_conformidades(created_at);
 
 -- ============================================================
@@ -103,6 +109,22 @@ CREATE TABLE IF NOT EXISTS area_categorias (
 
 CREATE INDEX idx_area_categorias_area   ON area_categorias(area);
 CREATE INDEX idx_area_categorias_activa ON area_categorias(activa);
+
+-- ============================================================
+-- TABLA: nc_repeticion_alertas
+-- ============================================================
+CREATE TABLE IF NOT EXISTS nc_repeticion_alertas (
+                                                     id                 CHAR(36)      NOT NULL DEFAULT (UUID()),
+    nc_id              VARCHAR(20)   NOT NULL,
+    area               VARCHAR(80)   NOT NULL,
+    categoria          VARCHAR(255)  NOT NULL,
+    incidencias_total  INT           NOT NULL,
+    ventana_dias       INT           NOT NULL,
+    created_at         DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_repeticion_alerta_nc (nc_id),
+    FOREIGN KEY (nc_id) REFERENCES no_conformidades(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB;
 
 -- ============================================================
 -- TABLA: nc_historial

@@ -17,6 +17,7 @@ const DashboardModule = (() => {
       area:         document.getElementById('f-area')?.value     || '',
       departamento: document.getElementById('f-dept')?.value     || '',
       programa:     document.getElementById('f-programa')?.value || '',
+      prioridad:    document.getElementById('f-prioridad')?.value || '',
       anio:         document.getElementById('f-anio')?.value     || '',
       mes:          document.getElementById('f-mes')?.value      || '',
     };
@@ -419,7 +420,7 @@ const DashboardModule = (() => {
   }
 
   function resetFilters() {
-    ['f-area','f-dept','f-programa','f-anio','f-mes'].forEach(id => {
+    ['f-area','f-dept','f-programa','f-prioridad','f-anio','f-mes'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.value = '';
     });

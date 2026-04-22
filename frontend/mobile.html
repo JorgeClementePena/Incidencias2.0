@@ -420,11 +420,11 @@
       <div class="section-body">
         <div class="field">
           <label>Código de proyecto <span class="req">*</span></label>
-          <input type="text" id="m-proyecto" placeholder="Ej: AIRBUS-A320">
+          <input type="text" id="m-proyecto" placeholder="Ej: 2026/01">
         </div>
         <div class="field">
           <label>Proceso <span class="req">*</span></label>
-          <input type="text" id="m-proceso" placeholder="Ej: 2023/181">
+          <input type="text" id="m-proceso" placeholder="Ej: ...">
         </div>
         <div class="field">
           <label>Fecha de detección <span class="req">*</span></label>
@@ -533,11 +533,11 @@
         <div id="pending-editor-id" class="field-hint"></div>
         <div class="field">
           <label>Codigo de proyecto <span class="req">*</span></label>
-          <input type="text" id="m-review-proyecto" placeholder="Ej: AIRBUS-A320">
+          <input type="text" id="m-review-proyecto" placeholder="Ej: 2026/01">
         </div>
         <div class="field">
           <label>Proceso <span class="req">*</span></label>
-            <input type="text" id="m-review-proceso" placeholder="Ej: 2023/181">
+            <input type="text" id="m-review-proceso" placeholder="...">
         </div>
         <div class="field">
           <label>Fecha de deteccion <span class="req">*</span></label>
@@ -577,6 +577,15 @@
           <label>Categoria <span class="req">*</span></label>
           <select id="m-review-categoria">
             <option value="">Selecciona categoria...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Prioridad</label>
+          <select id="m-review-prioridad">
+            <option value="">Sin prioridad</option>
+            <option value="Nivel 1">Nivel 1</option>
+            <option value="Nivel 2">Nivel 2</option>
+            <option value="Nivel 3">Nivel 3</option>
           </select>
         </div>
         <div class="field">
@@ -625,7 +634,8 @@
         <div id="pending-err" class="error-msg"></div>
         <div class="pending-actions">
           <button class="btn btn-secondary" type="button" onclick="closePendingEditor()">Cancelar</button>
-          <button class="btn btn-primary" id="pending-save-btn" type="button" onclick="savePendingReview()">Guardar revision</button>
+          <button class="btn btn-secondary" id="pending-save-notify-btn" type="button" onclick="savePendingReview(true)">Guardar y notificar</button>
+          <button class="btn btn-primary" id="pending-save-btn" type="button" onclick="savePendingReview(false)">Guardar revision</button>
         </div>
       </div>
     </div>
@@ -646,8 +656,7 @@ let mobileCatalogos = {
     'Producción',
     'Prototipos',
     'Termoestables',
-    'Termoplásticos',
-    'Nuevas tecnologías'
+    'Termoplásticos'
   ],
   programas: [
     'Laboratorio y Calidad',
@@ -832,6 +841,7 @@ async function openPendingEditor(ncId) {
     document.getElementById('m-review-programa-desc').value = data.nc.programa_desc || '';
     document.getElementById('m-review-email-destino').value = data.nc.email_destino || '';
     syncMobileReviewCategorias(data.nc.area || '', data.nc.categoria || '');
+    document.getElementById('m-review-prioridad').value = data.nc.prioridad || '';
     document.getElementById('m-review-afecta-ma').value = data.nc.afecta_ma ? 'true' : 'false';
     document.getElementById('m-review-afecta-resultado').value = data.nc.afecta_resultado ? 'true' : 'false';
     document.getElementById('m-review-descripcion').value = data.nc.descripcion || '';
@@ -848,14 +858,16 @@ async function openPendingEditor(ncId) {
 }
 
 function closePendingEditor() {
+
   currentPendingNc = null;
   document.getElementById('pending-editor').style.display = 'none';
   document.getElementById('pending-err').classList.remove('show');
 }
 
-async function savePendingReview() {
+async function savePendingReview(notificar = false) {
   const errEl = document.getElementById('pending-err');
   const btn = document.getElementById('pending-save-btn');
+  const notifyBtn = document.getElementById('pending-save-notify-btn');
   errEl.classList.remove('show');
 
   if (!currentPendingNc) {
@@ -890,6 +902,7 @@ async function savePendingReview() {
     programa: v('m-review-programa'),
     programa_desc: v('m-review-programa-desc'),
     categoria,
+    prioridad: v('m-review-prioridad'),
     afecta_ma: document.getElementById('m-review-afecta-ma').value === 'true',
     afecta_resultado: document.getElementById('m-review-afecta-resultado').value === 'true',
     descripcion,
@@ -899,11 +912,16 @@ async function savePendingReview() {
     observaciones: v('m-review-observaciones'),
     valoracion_euros: v('m-review-valoracion') || 0,
     email_destino: v('m-review-email-destino'),
-    notificar_creador: false
+    notificar_creador: notificar
   };
 
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Guardando...';
+  notifyBtn.disabled = true;
+  if (notificar) {
+    notifyBtn.innerHTML = '<span class="spinner"></span>Guardando...';
+  } else {
+    btn.innerHTML = '<span class="spinner"></span>Guardando...';
+  }
 
   try {
     const res = await fetch(`${API_BASE}/nc/${currentPendingNc.id}`, {
@@ -924,7 +942,9 @@ async function savePendingReview() {
     showErr(errEl, err.message);
   } finally {
     btn.disabled = false;
+    notifyBtn.disabled = false;
     btn.textContent = 'Guardar revision';
+    notifyBtn.textContent = 'Guardar y notificar';
   }
 }
 

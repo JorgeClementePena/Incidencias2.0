@@ -177,4 +177,42 @@ async function sendEditNotification(nc, emailCreador) {
   });
 }
 
-module.exports = { sendNCEmail, sendVerificationEmail, sendEditNotification };
+async function sendRepeatThresholdAlert({ codigoProyecto, area, categoria, incidenciasTotal, ventanaDias }) {
+  const admins = await query(
+    'SELECT email FROM users WHERE role = ? AND active = 1 AND email IS NOT NULL AND email <> ?',
+    ['admin', '']
+  );
+  const destinatarios = admins.rows.map(row => row.email).filter(Boolean);
+  if (!destinatarios.length) return;
+
+  const subject = `[NC] Umbral de repetición alcanzado: ${area} / ${categoria}`;
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto">
+      <div style="background:#b03a2e;color:white;padding:24px 28px;border-radius:8px 8px 0 0">
+        <h1 style="margin:0;font-size:18px">Aviso de repetición automática</h1>
+      </div>
+      <div style="background:#f8f9fa;padding:24px 28px;border-radius:0 0 8px 8px">
+        <p>Se ha alcanzado el umbral de repetición automática configurado para incidencias.</p>
+        <p><strong>Área:</strong> ${area}</p>
+        <p><strong>Categoría:</strong> ${categoria}</p>
+        <p><strong>Incidencias detectadas:</strong> ${incidenciasTotal}</p>
+        <p><strong>Ventana temporal:</strong> ${ventanaDias} días</p>
+        <hr style="border:none;border-top:1px solid #ddd;margin:16px 0">
+        <p style="font-size:12px;color:#888">Este mensaje ha sido generado automáticamente por Incidencias Fidamc.</p>
+      </div>
+    </div>`;
+
+  if (!transporter) {
+    console.log(`[EMAIL] (simulado) Alerta repetición para: ${destinatarios.join(', ')} | ${subject}`);
+    return;
+  }
+
+  await transporter.sendMail({
+    from: `"Incidencias Fidamc" <${process.env.EMAIL_FROM || smtpUser}>`,
+    to: destinatarios.join(','),
+    subject,
+    html,
+  });
+}
+
+module.exports = { sendNCEmail, sendVerificationEmail, sendEditNotification, sendRepeatThresholdAlert };

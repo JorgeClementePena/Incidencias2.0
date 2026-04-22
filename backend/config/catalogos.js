@@ -8,7 +8,6 @@ const DEPARTAMENTOS = [
   'Prototipos',
   'Termoplásticos',
   'Termoestables',
-  'Nuevas tecnologías',
 ];
 
 const PROGRAMAS = [
@@ -51,6 +50,10 @@ const DEPARTAMENTO_ALIASES = {
   'laboratorio ndt': 'Laboratorio y NDT',
   'Nextgen factory': 'Nextgen factory',
   'nextgen factory': 'Nextgen factory',
+  'Nuevas tecnologias': 'Nextgen factory',
+  'Nuevas tecnologías': 'Nextgen factory',
+  'nuevas tecnologias': 'Nextgen factory',
+  'nuevas tecnologías': 'Nextgen factory',
   Produccion: 'Producción',
   'Producción': 'Producción',
   produccion: 'Producción',
@@ -62,10 +65,6 @@ const DEPARTAMENTO_ALIASES = {
   'Termoplásticos': 'Termoplásticos',
   termoplasticos: 'Termoplásticos',
   termoplásticos: 'Termoplásticos',
-  'Nuevas tecnologias': 'Nuevas tecnologías',
-  'Nuevas tecnologías': 'Nuevas tecnologías',
-  'nuevas tecnologias': 'Nuevas tecnologías',
-  'nuevas tecnologías': 'Nuevas tecnologías',
 };
 
 const PROGRAMA_ALIASES = {

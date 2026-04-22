@@ -15,7 +15,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const usersRoutes     = require('./routes/users');
 const catalogosRoutes = require('./routes/catalogos');
 const { query }       = require('./db/db');
-const { AREA_ALIASES, DEFAULT_CATEGORIAS } = require('./config/catalogos');
+const { AREA_ALIASES, DEPARTAMENTO_ALIASES, DEFAULT_CATEGORIAS } = require('./config/catalogos');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
@@ -40,7 +40,14 @@ app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
 // Rate limiting — 300 req / 15min por IP (suficiente para desarrollo y uso normal)
-const limiter = rateLimit({ windowMs: 15*60*1000, max: 300, message: { error: 'Demasiadas solicitudes. Espera un momento.' } });
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || `${15 * 60 * 1000}`, 10),
+  max: parseInt(
+    process.env.RATE_LIMIT_MAX || (process.env.NODE_ENV === 'production' ? '300' : '5000'),
+    10
+  ),
+  message: { error: 'Demasiadas solicitudes. Espera un momento.' }
+});
 app.use('/api/', limiter);
 
 // Rutas API
@@ -122,6 +129,9 @@ async function ensureRuntimeSchema() {
       area VARCHAR(50) DEFAULT NULL,
       programa VARCHAR(150) DEFAULT NULL,
       categoria VARCHAR(255) DEFAULT NULL,
+      prioridad VARCHAR(20) DEFAULT NULL,
+      importada_excel TINYINT(1) NOT NULL DEFAULT 0,
+      repetida_automatica TINYINT(1) NOT NULL DEFAULT 0,
       programa_desc VARCHAR(200) DEFAULT NULL,
       afecta_ma TINYINT(1) NOT NULL DEFAULT 0,
       afecta_resultado TINYINT(1) NOT NULL DEFAULT 0,
@@ -148,6 +158,9 @@ async function ensureRuntimeSchema() {
       KEY idx_nc_dept (departamento),
       KEY idx_nc_programa (programa),
       KEY idx_nc_categoria (categoria),
+      KEY idx_nc_prioridad (prioridad),
+      KEY idx_nc_importada (importada_excel),
+      KEY idx_nc_rep_auto (repetida_automatica),
       KEY idx_nc_created (created_at),
       CONSTRAINT fk_nc_creado_por FOREIGN KEY (creado_por) REFERENCES users(id) ON DELETE SET NULL
     ) ENGINE=InnoDB
@@ -166,6 +179,21 @@ async function ensureRuntimeSchema() {
       UNIQUE KEY uk_area_categoria (area, nombre),
       KEY idx_area_categorias_area (area),
       KEY idx_area_categorias_activa (activa)
+    ) ENGINE=InnoDB
+  `);
+
+  await query(`
+    CREATE TABLE IF NOT EXISTS nc_repeticion_alertas (
+      id CHAR(36) NOT NULL DEFAULT (UUID()),
+      nc_id VARCHAR(20) NOT NULL,
+      area VARCHAR(80) NOT NULL,
+      categoria VARCHAR(255) NOT NULL,
+      incidencias_total INT NOT NULL,
+      ventana_dias INT NOT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (id),
+      UNIQUE KEY uk_repeticion_alerta_nc (nc_id),
+      CONSTRAINT fk_rep_alerta_nc FOREIGN KEY (nc_id) REFERENCES no_conformidades(id) ON DELETE CASCADE
     ) ENGINE=InnoDB
   `);
 
@@ -240,11 +268,40 @@ async function ensureRuntimeSchema() {
     await query('ALTER TABLE no_conformidades ADD COLUMN observaciones TEXT DEFAULT NULL AFTER accion_correctora');
   }
 
+  const prioridadColumn = await query(`SHOW COLUMNS FROM no_conformidades LIKE 'prioridad'`);
+  if (!prioridadColumn.rows.length) {
+    await query('ALTER TABLE no_conformidades ADD COLUMN prioridad VARCHAR(20) DEFAULT NULL AFTER categoria');
+    await query('ALTER TABLE no_conformidades ADD INDEX idx_nc_prioridad (prioridad)');
+  }
+
+  const repetidaAutomaticaColumn = await query(`SHOW COLUMNS FROM no_conformidades LIKE 'repetida_automatica'`);
+  if (!repetidaAutomaticaColumn.rows.length) {
+    await query('ALTER TABLE no_conformidades ADD COLUMN repetida_automatica TINYINT(1) NOT NULL DEFAULT 0 AFTER prioridad');
+    await query('ALTER TABLE no_conformidades ADD INDEX idx_nc_rep_auto (repetida_automatica)');
+  }
+
+  const importadaExcelColumn = await query(`SHOW COLUMNS FROM no_conformidades LIKE 'importada_excel'`);
+  if (!importadaExcelColumn.rows.length) {
+    await query('ALTER TABLE no_conformidades ADD COLUMN importada_excel TINYINT(1) NOT NULL DEFAULT 0 AFTER prioridad');
+    await query('ALTER TABLE no_conformidades ADD INDEX idx_nc_importada (importada_excel)');
+  }
+
   for (const [from, to] of Object.entries(AREA_ALIASES)) {
     if (from === to) continue;
     await query('UPDATE no_conformidades SET area = ? WHERE area = ?', [to, from]);
     await query(
       "UPDATE user_responsabilidades SET valor = ? WHERE tipo = 'area' AND valor = ?",
+      [to, from]
+    );
+  }
+
+  for (const [from, to] of Object.entries(DEPARTAMENTO_ALIASES)) {
+    if (from === to) continue;
+    await query('UPDATE no_conformidades SET departamento = ? WHERE departamento = ?', [to, from]);
+    await query('UPDATE users SET department = ? WHERE department = ?', [to, from]);
+    await query('UPDATE pending_registrations SET department = ? WHERE department = ?', [to, from]);
+    await query(
+      "UPDATE user_responsabilidades SET valor = ? WHERE tipo = 'departamento' AND valor = ?",
       [to, from]
     );
   }

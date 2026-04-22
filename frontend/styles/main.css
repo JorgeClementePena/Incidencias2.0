@@ -453,10 +453,25 @@ tbody tr:hover td { background: var(--teal-50); }
 .badge-menor     { background: var(--teal-50); color: var(--teal-800); }
 .badge-obs       { background: #f3f4f6; color: #6b7280; }
 .badge-cat       { background: #eef6f4; color: var(--teal-800); border: 1px solid var(--teal-200); }
+.badge-priority-1 { background: #fde8e6; color: #b03a2e; border: 1px solid #f4b7b0; }
+.badge-priority-2 { background: #fef3e2; color: #b7770d; border: 1px solid #f3d19c; }
+.badge-priority-3 { background: #e8f0fe; color: #2471a3; border: 1px solid #b6ccf6; }
+.badge-repeat-auto { background: #f3e8ff; color: #7c3aed; border: 1px solid #d8b4fe; }
 .badge-admin     { background: var(--teal-100); color: var(--teal-800); }
 .badge-user      { background: #f3f4f6; color: #6b7280; }
 .badge-ok        { background: var(--teal-50); color: var(--teal-800); border: 1px solid var(--teal-200); }
 .badge-error     { background: #fde8e6; color: #b03a2e; border: 1px solid #f4b7b0; }
+.copy-project-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--teal-700);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.copy-project-btn:hover { text-decoration: underline; }
 
 /* ══════════════════════════════════════
    NC FORM
@@ -622,7 +637,7 @@ tbody tr:hover td { background: var(--teal-50); }
   display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
 }
 .search-bar input { max-width: 280px; padding: 8px 13px; font-size: 13px; }
-.search-bar select { max-width: 170px; padding: 8px 13px; font-size: 13px; }
+.search-bar select { max-width: 203px; padding: 8px 13px; font-size: 13px; }
 
 .import-card .card-body {
   display: flex;
