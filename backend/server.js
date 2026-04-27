@@ -122,7 +122,7 @@ async function ensureRuntimeSchema() {
       id VARCHAR(20) NOT NULL,
       seq INT NOT NULL AUTO_INCREMENT UNIQUE,
       codigo_proyecto VARCHAR(100) NOT NULL,
-      proceso VARCHAR(100) NOT NULL,
+      proceso VARCHAR(100) DEFAULT NULL,
       fecha_deteccion DATE NOT NULL,
       detectado_por VARCHAR(150) NOT NULL,
       departamento VARCHAR(100) NOT NULL,
@@ -180,6 +180,11 @@ async function ensureRuntimeSchema() {
       KEY idx_area_categorias_area (area),
       KEY idx_area_categorias_activa (activa)
     ) ENGINE=InnoDB
+  `);
+
+  await query(`
+    ALTER TABLE no_conformidades
+    MODIFY COLUMN proceso VARCHAR(100) DEFAULT NULL
   `);
 
   await query(`

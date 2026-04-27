@@ -769,6 +769,45 @@ tbody tr:hover td { background: var(--teal-50); }
   display: flex; align-items: center; justify-content: center; gap: 8px;
   padding: 16px;
   border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pagination-page {
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+
+.pagination-page:hover {
+  background: var(--surface2);
+  border-color: var(--teal-300);
+}
+
+.pagination-page.is-active {
+  background: var(--teal-600);
+  border-color: var(--teal-600);
+  color: #fff;
+}
+
+.pagination-dots {
+  min-width: 20px;
+  text-align: center;
+  color: var(--text-low);
+  font-weight: 700;
 }
 .page-info { font-size: 13px; color: var(--text-mid); }
 

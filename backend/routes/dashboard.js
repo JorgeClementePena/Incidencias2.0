@@ -14,6 +14,7 @@ function buildFilters(q) {
   if (q.area)         { conditions.push('area = ?');                         params.push(q.area); }
   if (q.departamento) { conditions.push('departamento = ?');                 params.push(q.departamento); }
   if (q.programa)     { conditions.push('programa = ?');                     params.push(q.programa); }
+  if (q.estado)       { conditions.push('estado = ?');                       params.push(q.estado); }
   if (q.prioridad)    { conditions.push('prioridad = ?');                    params.push(q.prioridad); }
   if (q.anio)         { conditions.push('YEAR(fecha_deteccion) = ?');        params.push(q.anio); }
   if (q.mes)          { conditions.push('MONTH(fecha_deteccion) = ?');       params.push(q.mes); }

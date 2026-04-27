@@ -423,8 +423,8 @@
           <input type="text" id="m-proyecto" placeholder="Ej: 2026/01">
         </div>
         <div class="field">
-          <label>Proceso <span class="req">*</span></label>
-          <input type="text" id="m-proceso" placeholder="Ej: ...">
+          <label>Proceso</label>
+          <input type="text" id="m-proceso" placeholder="Ej: 2026/01-Pzz">
         </div>
         <div class="field">
           <label>Fecha de detección <span class="req">*</span></label>
@@ -536,8 +536,8 @@
           <input type="text" id="m-review-proyecto" placeholder="Ej: 2026/01">
         </div>
         <div class="field">
-          <label>Proceso <span class="req">*</span></label>
-            <input type="text" id="m-review-proceso" placeholder="...">
+          <label>Proceso</label>
+            <input type="text" id="m-review-proceso" placeholder="">
         </div>
         <div class="field">
           <label>Fecha de deteccion <span class="req">*</span></label>
@@ -884,7 +884,6 @@ async function savePendingReview(notificar = false) {
   const descripcion = v('m-review-descripcion');
 
   if (!codigoProyecto) return showErr(errEl, 'El codigo de proyecto es obligatorio.');
-  if (!proceso) return showErr(errEl, 'El proceso es obligatorio.');
   if (!fechaDeteccion) return showErr(errEl, 'La fecha de deteccion es obligatoria.');
   if (!detectadoPor) return showErr(errEl, 'Detectado por es obligatorio.');
   if (!departamento) return showErr(errEl, 'El departamento es obligatorio.');
@@ -894,7 +893,7 @@ async function savePendingReview(notificar = false) {
 
   const payload = {
     codigo_proyecto: codigoProyecto,
-    proceso,
+    proceso: proceso || null,
     fecha_deteccion: fechaDeteccion,
     detectado_por: detectadoPor,
     departamento,
@@ -956,7 +955,7 @@ async function submitNC() {
 
   const data = {
     codigo_proyecto:   v('m-proyecto'),
-    proceso:           v('m-proceso'),
+    proceso:           v('m-proceso') || null,
     fecha_deteccion:   v('m-fecha'),
     detectado_por:     v('m-detecta'),
     departamento:      v('m-departamento'),
@@ -972,7 +971,6 @@ async function submitNC() {
 
   // Validación
   if (!data.codigo_proyecto) return showErr(errEl, 'El código de proyecto es obligatorio.');
-  if (!data.proceso)         return showErr(errEl, 'Selecciona un proceso.');
   if (!data.fecha_deteccion) return showErr(errEl, 'La fecha de detección es obligatoria.');
   if (!data.detectado_por)   return showErr(errEl, 'El campo "Detectado por" es obligatorio.');
   if (!data.departamento)    return showErr(errEl, 'Selecciona un departamento.');

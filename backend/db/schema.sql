@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS no_conformidades (
                                                 id                  VARCHAR(20)     NOT NULL,
     seq                 INT             NOT NULL AUTO_INCREMENT UNIQUE,
     codigo_proyecto     VARCHAR(100)    NOT NULL,
-    proceso             VARCHAR(100)    NOT NULL,
+    proceso             VARCHAR(100)    DEFAULT NULL,
     fecha_deteccion     DATE            NOT NULL,
     detectado_por       VARCHAR(150)    NOT NULL,
     departamento        VARCHAR(100)    NOT NULL,

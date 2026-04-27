@@ -50,6 +50,10 @@ async function buildCategoriasPorArea() {
 
 async function createNcRecord(client, payload) {
   const tempId = `TMP-${crypto.randomUUID().slice(0, 12)}`;
+  const estado = payload.estado === 'Cerrada' ? 'Cerrada' : 'Abierta';
+  const closedAt = estado === 'Cerrada'
+    ? (payload.closed_at || new Date().toISOString().slice(0, 19).replace('T', ' '))
+    : null;
 
   await client.query(
     `INSERT INTO no_conformidades (
@@ -58,12 +62,12 @@ async function createNcRecord(client, payload) {
       importada_excel, repetida_automatica, programa_desc,
       afecta_ma, afecta_resultado, descripcion,
       causas, accion_inmediata, accion_correctora, observaciones,
-      valoracion_euros, email_destino, email_cc, creado_por, email_remitente, revisada
-    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      valoracion_euros, estado, email_destino, email_cc, creado_por, email_remitente, revisada, closed_at
+    ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
       tempId,
       payload.codigo_proyecto,
-      payload.proceso,
+      payload.proceso || null,
       payload.fecha_deteccion,
       payload.detectado_por,
       payload.departamento,
@@ -82,11 +86,13 @@ async function createNcRecord(client, payload) {
       payload.accion_correctora || null,
       payload.observaciones || null,
       parseFloat(payload.valoracion_euros) || 0,
+      estado,
       payload.email_destino || null,
       payload.email_cc || null,
       payload.creado_por || null,
       payload.email_remitente || null,
       payload.revisada ? 1 : 0,
+      closedAt,
     ]
   );
 
@@ -409,6 +415,7 @@ router.post('/import/commit', requireAdmin, async (req, res) => {
         prioridad: null,
         importada_excel: 1,
         repetida_automatica: 0,
+        estado: 'Cerrada',
         programa_desc: null,
         email_destino: emailDestino || null,
         email_cc: emailCC || null,
@@ -497,7 +504,7 @@ router.post('/', async (req, res) => {
       observaciones,
     } = req.body;
 
-    if (!codigo_proyecto || !proceso || !fecha_deteccion || !detectado_por || !departamento || !descripcion) {
+    if (!codigo_proyecto || !fecha_deteccion || !detectado_por || !departamento || !descripcion) {
       await client.rollback();
       client.release();
       return res.status(400).json({ error: 'Faltan campos obligatorios.' });
@@ -511,7 +518,7 @@ router.post('/', async (req, res) => {
 
     const ncId = await createNcRecord(client, {
       codigo_proyecto,
-      proceso,
+      proceso: proceso || null,
       fecha_deteccion,
       detectado_por,
       departamento,
@@ -633,7 +640,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
       prioridad,
     } = req.body;
 
-    if (!codigo_proyecto || !proceso || !fecha_deteccion || !detectado_por || !departamento || !descripcion) {
+    if (!codigo_proyecto || !fecha_deteccion || !detectado_por || !departamento || !descripcion) {
       return res.status(400).json({ error: 'Faltan campos obligatorios.' });
     }
 
@@ -674,7 +681,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
          WHERE id=?`,
         [
           codigo_proyecto,
-          proceso,
+          proceso || null,
           fecha_deteccion,
           detectado_por,
           departamento,

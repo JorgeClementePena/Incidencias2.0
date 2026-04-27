@@ -46,7 +46,7 @@ const FormModule = (() => {
     const departamento = document.getElementById('nc-departamento').value;
     const descripcion = document.getElementById('nc-descripcion').value.trim();
 
-    if (!proyecto || !proceso || !fecha || !detecta || !departamento || !descripcion) {
+    if (!proyecto || !fecha || !detecta || !departamento || !descripcion) {
       App.toast('Rellena todos los campos obligatorios (*)', 'error');
       return;
     }
@@ -58,7 +58,7 @@ const FormModule = (() => {
     try {
       const body = {
         codigo_proyecto: proyecto,
-        proceso,
+        proceso: proceso || null,
         fecha_deteccion: fecha,
         detectado_por: detecta,
         departamento,

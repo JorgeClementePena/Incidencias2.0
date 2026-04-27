@@ -1,5 +1,6 @@
 const IncidenciasModule = (() => {
   let currentPage = 1;
+  let filtersBound = false;
 
   function badgeEstado(estado) {
     const map = { 'Abierta': 'badge-open', 'En progreso': 'badge-progress', 'Cerrada': 'badge-closed' };
@@ -41,6 +42,51 @@ const IncidenciasModule = (() => {
     return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : value;
   }
 
+  function buildPaginationItems(page, pages) {
+    const items = [];
+    const addPage = value => items.push({ type: 'page', value });
+    const addDots = key => items.push({ type: 'dots', key });
+
+    if (pages <= 7) {
+      for (let i = 1; i <= pages; i++) addPage(i);
+      return items;
+    }
+
+    addPage(1);
+
+    const start = Math.max(2, page - 1);
+    const end = Math.min(pages - 1, page + 1);
+
+    if (start > 2) addDots('left');
+    for (let i = start; i <= end; i++) addPage(i);
+    if (end < pages - 1) addDots('right');
+
+    addPage(pages);
+    return items;
+  }
+
+  function renderPagination(page, pages, total) {
+    const pag = document.getElementById('incidencias-pag');
+    if (!pag) return;
+
+    if (pages <= 1) {
+      pag.innerHTML = '';
+      return;
+    }
+
+    const items = buildPaginationItems(page, pages);
+    pag.innerHTML = `
+      <button class="btn btn-ghost btn-sm" onclick="App.incidencias.load(${page - 1})" ${page <= 1 ? 'disabled' : ''}>←</button>
+      <div class="pagination-pages">
+        ${items.map(item => item.type === 'dots'
+          ? '<span class="pagination-dots">…</span>'
+          : `<button class="pagination-page${item.value === page ? ' is-active' : ''}" type="button" onclick="App.incidencias.load(${item.value})" ${item.value === page ? 'aria-current="page"' : ''}>${item.value}</button>`
+        ).join('')}
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="App.incidencias.load(${page + 1})" ${page >= pages ? 'disabled' : ''}>→</button>
+      <span class="page-info">Página ${page} de ${pages} (${total} total)</span>`;
+  }
+
   function buildQuery(page = currentPage) {
     const search = document.getElementById('s-search')?.value || '';
     const estado = document.getElementById('s-estado')?.value || '';
@@ -59,7 +105,22 @@ const IncidenciasModule = (() => {
     return q;
   }
 
+  function resetAndLoad() {
+    currentPage = 1;
+    return load(1);
+  }
+
+  function bindFilterEvents() {
+    if (filtersBound) return;
+    const search = document.getElementById('s-search');
+    if (search) {
+      search.oninput = () => resetAndLoad();
+    }
+    filtersBound = true;
+  }
+
   async function load(page = currentPage) {
+    bindFilterEvents();
     currentPage = page;
     const q = buildQuery(page);
 
@@ -118,16 +179,7 @@ const IncidenciasModule = (() => {
           </table>
         </div>`;
 
-      const pag = document.getElementById('incidencias-pag');
-      if (pages <= 1) {
-        pag.innerHTML = '';
-        return;
-      }
-
-      pag.innerHTML = `
-        <button class="btn btn-ghost btn-sm" onclick="App.incidencias.load(${page - 1})" ${page <= 1 ? 'disabled' : ''}>← Anterior</button>
-        <span class="page-info">Página ${page} de ${pages} (${total} total)</span>
-        <button class="btn btn-ghost btn-sm" onclick="App.incidencias.load(${page + 1})" ${page >= pages ? 'disabled' : ''}>Siguiente →</button>`;
+      renderPagination(page, pages, total);
     } catch (err) {
       container.innerHTML = `<div class="empty-state"><p style="color:var(--danger)">${err.message}</p></div>`;
     }
@@ -181,7 +233,7 @@ const IncidenciasModule = (() => {
     }
   }
 
-  return { load, exportCsv, copyProjectCode };
+  return { load, resetAndLoad, exportCsv, copyProjectCode };
 })();
 
 const ModalModule = (() => {
@@ -225,7 +277,7 @@ const ModalModule = (() => {
 
       const fields = [
         ['Código Proyecto', nc.codigo_proyecto],
-        ['Proceso / PE', nc.proceso],
+        ['Proceso / PE', nc.proceso || '&mdash;'],
         ['Departamento', nc.departamento],
         ['Área', nc.area || '&mdash;'],
         ['Programa', nc.programa || '&mdash;'],

@@ -153,7 +153,7 @@
             <div class="page-sub">Rellena el formulario. Se notificará automáticamente a los responsables.</div>
           </div>
         </div>
-
+        
         <!-- Formulario -->
         <div id="nc-form-wrapper">
           <div class="nc-form-card">
@@ -172,8 +172,8 @@
                   <input type="text" id="nc-proyecto" placeholder="Ej: 2026/01">
                 </div>
                 <div class="nc-cell">
-                  <label>Proceso / PE <span class="req">*</span></label>
-                  <input type="text" id="nc-proceso" placeholder="...">
+                  <label>Proceso / PE</label>
+                  <input type="text" id="nc-proceso" placeholder="2026/01-Pzz">
                 </div>
                 <div class="nc-cell">
                   <label>Fecha detección <span class="req">*</span></label>
@@ -225,7 +225,7 @@
                   </select>
                 </div>
                 <div class="nc-cell">
-                  <label>Descripción de la NC <span class="req">*</span></label>
+                  <label>Descripción de la incidencia <span class="req">*</span></label>
                   <textarea id="nc-descripcion" placeholder="Describe la incidencia con el máximo detalle..."></textarea>
                 </div>
               </div>
@@ -299,6 +299,14 @@
             <label>Programa</label>
             <select id="f-programa" onchange="App.dashboard.load()">
               <option value="">Todos los programas</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Estado</label>
+            <select id="f-estado" onchange="App.dashboard.load()">
+              <option value="">Todos los estados</option>
+              <option value="Abierta">Abierta</option>
+              <option value="Cerrada">Cerrada</option>
             </select>
           </div>
           <div class="filter-group">
@@ -406,20 +414,20 @@
         </div>
         <div class="search-bar">
           <input type="text" id="s-search" placeholder="🔍  Buscar código, proyecto, descripción…" oninput="App.incidencias.load()">
-          <select id="s-estado" onchange="App.incidencias.load()">
+          <select id="s-estado" onchange="App.incidencias.resetAndLoad()">
             <option value="">Todos los estados</option>
             <option>Abierta</option><option>Cerrada</option>
           </select>
-          <select id="s-dept" onchange="App.incidencias.load()">
+          <select id="s-dept" onchange="App.incidencias.resetAndLoad()">
             <option value="">Todos los departamentos</option>
           </select>
-          <select id="s-area" onchange="App.incidencias.load()">
+          <select id="s-area" onchange="App.incidencias.resetAndLoad()">
             <option value="">Todas las áreas</option>
           </select>
-          <select id="s-cat" onchange="App.incidencias.load()">
+          <select id="s-cat" onchange="App.incidencias.resetAndLoad()">
             <option value="">Todas las categorías</option>
           </select>
-          <select id="s-prioridad" onchange="App.incidencias.load()">
+          <select id="s-prioridad" onchange="App.incidencias.resetAndLoad()">
             <option value="">Todas las prioridades</option>
             <option value="Nivel 1">Nivel 1</option>
             <option value="Nivel 2">Nivel 2</option>
@@ -575,7 +583,7 @@
             <input class="field-input" id="edit-proyecto" type="text">
           </div>
           <div class="field-group">
-            <label class="field-label">Proceso / PE *</label>
+            <label class="field-label">Proceso / PE </label>
             <input class="field-input" id="edit-proceso" type="text">
           </div>
           <div class="field-group">
