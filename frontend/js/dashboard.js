@@ -50,26 +50,35 @@ const DashboardModule = (() => {
     return COLORS.multi[Math.abs(hash) % COLORS.multi.length];
   }
 
+  async function loadSection(path, fallback, label) {
+    try {
+      return await API.get(path);
+    } catch (err) {
+      console.error(`[Dashboard] ${label}:`, err.message);
+      return fallback;
+    }
+  }
+
   async function load() {
     const f = getFilters();
     const q = buildQuery(f);
+    const suffix = q ? '?' + q : '';
 
     // Cargar todos en paralelo
-    const [kpis, porArea, valMes, porDept, porProg, porProy, porCat, porDia] = await Promise.all([
-      API.get('/dashboard/kpis?' + q),
-      API.get('/dashboard/por-area?' + q),
-      API.get('/dashboard/valoracion-mensual?' + q),
-      API.get('/dashboard/por-departamento?' + q),
-      API.get('/dashboard/por-programa?' + q),
-      API.get('/dashboard/por-proyecto?' + q),
-      API.get('/dashboard/por-categoria?' + q),
-      API.get('/dashboard/por-dia-semana?' + q),
+    const [kpis, porArea, valMes, porProg, porProy, porCat, porDia] = await Promise.all([
+      loadSection('/dashboard/kpis' + suffix, {}, 'KPIs'),
+      loadSection('/dashboard/por-area' + suffix, [], 'por area'),
+      loadSection('/dashboard/valoracion-mensual' + suffix, [], 'valoracion mensual'),
+      loadSection('/dashboard/por-programa' + suffix, [], 'por programa'),
+      loadSection('/dashboard/por-proyecto' + suffix, [], 'por proyecto'),
+      loadSection('/dashboard/por-categoria' + suffix, [], 'por categoria'),
+      loadSection('/dashboard/por-dia-semana' + suffix, [], 'por dia de semana'),
     ]);
 
     renderKPIs(kpis);
     renderDonut(porArea);
     renderValoracionMes(valMes);
-    renderPorArea(porDept);       // Incidencias por área (usamos departamento aquí)
+    renderPorArea(porArea);
     renderPorPrograma(porProg);
     renderPorProyecto(porProy);
     renderCatNum(porCat);
@@ -180,20 +189,32 @@ const DashboardModule = (() => {
     });
   }
 
-  // Gráfica 3: Incidencias por área (departamento) — número y €
+  // Gráfica 3: Incidencias por área - número y €
   function renderPorArea(data) {
-    destroyChart('pordept');
+    destroyChart('porarea');
     const ctx = document.getElementById('chart-por-area');
     if (!ctx || !data.length) return;
 
-    const labels = data.map(d => d.departamento);
-    charts['pordept'] = new Chart(ctx, {
+    const byArea = {};
+    data.forEach(row => {
+      const area = row.area || 'Sin área';
+      if (!byArea[area]) byArea[area] = { total: 0, valoracion: 0 };
+      byArea[area].total += parseInt(row.total) || 0;
+      byArea[area].valoracion += parseFloat(row.valoracion) || 0;
+    });
+
+    const rows = Object.entries(byArea)
+      .map(([area, values]) => ({ area, ...values }))
+      .sort((a, b) => b.total - a.total);
+
+    const labels = rows.map(d => d.area);
+    charts['porarea'] = new Chart(ctx, {
       type: 'bar',
       data: {
         labels,
         datasets: [
-          { label: 'Nº Incidencias', data: data.map(d => parseInt(d.total)), backgroundColor: COLORS.teal[0], borderRadius: 4, yAxisID: 'y' },
-          { label: 'Valoración €',   data: data.map(d => parseFloat(d.valoracion)), backgroundColor: COLORS.teal[2], borderRadius: 4, yAxisID: 'y1' }
+          { label: 'Nº Incidencias', data: rows.map(d => d.total), backgroundColor: COLORS.teal[0], borderRadius: 4, yAxisID: 'y' },
+          { label: 'Valoración €',   data: rows.map(d => d.valoracion), backgroundColor: COLORS.teal[2], borderRadius: 4, yAxisID: 'y1' }
         ]
       },
       options: {
