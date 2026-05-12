@@ -77,14 +77,18 @@ const PendientesModule = (() => {
       const data = await API.get('/nc?pendientes=true&limit=1&page=1');
       const badge = document.getElementById('badge-pendientes');
       if (!badge) return;
-      if (data.total > 0) {
-        badge.textContent = data.total;
+
+      const total = data.total || 0;
+
+      if (total > 0) {
+        badge.textContent = total > 9 ? '9+' : total;
         badge.style.display = 'inline-block';
       } else {
         badge.style.display = 'none';
       }
-    } catch {
-      // Silencioso.
+
+    } catch (err) {
+      console.error('Error cargando badge:', err);
     }
   }
 

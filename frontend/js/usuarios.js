@@ -1,4 +1,4 @@
-const UsuariosModule = (() => {
+﻿const UsuariosModule = (() => {
 
   const AREAS = ['Producción', 'NDT', 'Laboratorio', 'Ingeniería', 'G-CAD'];
   const DEPARTAMENTOS = ['Ingeniería', 'Laboratorio y NDT', 'Nextgen factory', 'Producción', 'Prototipos', 'Termoplásticos', 'Termoestables'];

@@ -1,4 +1,4 @@
-// frontend/js/app.js — Router principal y namespace global
+﻿// frontend/js/app.js — Router principal y namespace global
 
 const App = (() => {
   // Módulos

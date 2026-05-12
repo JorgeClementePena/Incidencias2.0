@@ -158,6 +158,27 @@ router.get('/por-categoria', async (req, res) => {
   }
 });
 
+// GET /api/dashboard/por-prioridad
+router.get('/por-prioridad', async (req, res) => {
+  try {
+    const { where, params } = buildFilters(req.query);
+    const r = await query(
+      `SELECT prioridad,
+              COUNT(*) AS total,
+              COALESCE(SUM(valoracion_euros),0) AS valoracion
+       FROM no_conformidades ${where}
+         AND prioridad IS NOT NULL
+         AND prioridad <> ''
+       GROUP BY prioridad
+       ORDER BY FIELD(prioridad, 'Nivel 1', 'Nivel 2', 'Nivel 3')`,
+      params
+    );
+    res.json(r.rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Error en por-prioridad.' });
+  }
+});
+
 // GET /api/dashboard/por-dia-semana
 router.get('/por-dia-semana', async (req, res) => {
   try {

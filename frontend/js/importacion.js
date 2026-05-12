@@ -1,4 +1,4 @@
-const ImportacionModule = (() => {
+﻿const ImportacionModule = (() => {
   let previewRows = [];
 
   function token() {

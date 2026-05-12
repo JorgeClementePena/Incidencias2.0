@@ -3,7 +3,6 @@
 -- ============================================================
 
 -- La base de datos ya la crea Docker via MYSQL_DATABASE en docker-compose.yml
--- En local ejecuta primero: CREATE DATABASE nc_manager; USE nc_manager;
 
 -- ============================================================
 -- TABLA: users

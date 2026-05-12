@@ -1,4 +1,4 @@
-// frontend/js/api.js — Cliente HTTP centralizado
+﻿// frontend/js/api.js — Cliente HTTP centralizado
 
 const API = (() => {
   const BASE = '/api';

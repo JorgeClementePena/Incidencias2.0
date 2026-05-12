@@ -1,4 +1,4 @@
-// frontend/js/dashboard.js
+﻿// frontend/js/dashboard.js
 // Dashboard con todas las gráficas solicitadas
 
 const DashboardModule = (() => {
@@ -65,13 +65,14 @@ const DashboardModule = (() => {
     const suffix = q ? '?' + q : '';
 
     // Cargar todos en paralelo
-    const [kpis, porArea, valMes, porProg, porProy, porCat, porDia] = await Promise.all([
+    const [kpis, porArea, valMes, porProg, porProy, porCat, porPrioridad, porDia] = await Promise.all([
       loadSection('/dashboard/kpis' + suffix, {}, 'KPIs'),
       loadSection('/dashboard/por-area' + suffix, [], 'por area'),
       loadSection('/dashboard/valoracion-mensual' + suffix, [], 'valoracion mensual'),
       loadSection('/dashboard/por-programa' + suffix, [], 'por programa'),
       loadSection('/dashboard/por-proyecto' + suffix, [], 'por proyecto'),
       loadSection('/dashboard/por-categoria' + suffix, [], 'por categoria'),
+      loadSection('/dashboard/por-prioridad' + suffix, [], 'por prioridad'),
       loadSection('/dashboard/por-dia-semana' + suffix, [], 'por dia de semana'),
     ]);
 
@@ -83,7 +84,7 @@ const DashboardModule = (() => {
     renderPorProyecto(porProy);
     renderCatNum(porCat);
     renderCatEur(porCat);
-    renderDiaSemana(porDia);
+    renderPrioridad(porPrioridad);
     renderTablaDias(porDia);
   }
 
@@ -189,7 +190,7 @@ const DashboardModule = (() => {
     });
   }
 
-  // Gráfica 3: Incidencias por área - número y €
+  // Gráfica 3: Incidencias por área — número y €
   function renderPorArea(data) {
     destroyChart('porarea');
     const ctx = document.getElementById('chart-por-area');
@@ -340,35 +341,40 @@ const DashboardModule = (() => {
     });
   }
 
-  // Gráfica 8: Incidencias por día de la semana
-  function renderDiaSemana(data) {
-    destroyChart('diasem');
-    const ctx = document.getElementById('chart-diasemana');
+  // Gráfica 8: Incidencias por prioridad
+  function renderPrioridad(data) {
+    destroyChart('prioridad');
+    const ctx = document.getElementById('chart-prioridad');
     if (!ctx) return;
 
-    // Asegurar todos los días 1-5 (lunes-viernes), 0 si no hay datos
-    const diasLabels = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
-    const diasDow    = [1,2,3,4,5,6,0]; // DOW de PostgreSQL
-    const byDow      = {};
-    data.forEach(d => { byDow[parseInt(d.dow)] = parseInt(d.total); });
+    const niveles = ['Nivel 1', 'Nivel 2', 'Nivel 3'];
+    const byNivel = {};
+    data.forEach(d => { byNivel[d.prioridad] = d; });
 
-    const totales = diasDow.map(d => byDow[d] || 0);
-
-    charts['diasem'] = new Chart(ctx, {
+    charts['prioridad'] = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: diasLabels,
+        labels: niveles,
         datasets: [{
           label: 'Incidencias',
-          data: totales,
-          backgroundColor: totales.map((v, i) => i < 5 ? COLORS.teal[0] : '#cbd5d3'),
+          data: niveles.map(nivel => parseInt(byNivel[nivel]?.total) || 0),
+          backgroundColor: ['#c0392b', '#d68910', '#2471a3'],
           borderRadius: 6,
+        }, {
+          label: 'Valoración €',
+          data: niveles.map(nivel => parseFloat(byNivel[nivel]?.valoracion) || 0),
+          backgroundColor: ['rgba(192,57,43,0.35)', 'rgba(214,137,16,0.35)', 'rgba(36,113,163,0.35)'],
+          borderRadius: 6,
+          yAxisID: 'y1',
         }]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+        plugins: { legend: { labels: { font: { family: 'DM Sans' } } } },
+        scales: {
+          y:  { position: 'left', beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'Nº' } },
+          y1: { position: 'right', beginAtZero: true, grid: { drawOnChartArea: false }, title: { display: true, text: '€' } }
+        }
       }
     });
   }

@@ -1,4 +1,4 @@
-const IncidenciasModule = (() => {
+﻿const IncidenciasModule = (() => {
   let currentPage = 1;
   let filtersBound = false;
 

@@ -1,4 +1,4 @@
-const CatalogosModule = (() => {
+﻿const CatalogosModule = (() => {
   const fallback = {
     areas: ['Producción', 'NDT', 'Laboratorio', 'Ingeniería', 'G-CAD'],
     departamentos: [
